@@ -1,6 +1,9 @@
-[submodule "api/build/html"]
-	path = api/build/html
-	url = https://github.com/selibs/api
+[submodule "Kha"]
+	path = Kha
+	url = https://github.com/selibs/Kha
+[submodule "docs/build/html"]
+	path = docs/build/html
+	url = https://github.com/selibs/docs
 [submodule "libs/aura"]
 	path = libs/aura
 	url = https://github.com/MoritzBrueckner/aura
