@@ -1,7 +1,7 @@
 package s.ui.graphics.shapes;
 
-import kha.graphics4.ConstantLocation;
 import s.graphics.RenderTarget;
+import s.graphics.ConstantLocation;
 
 @:allow(s.ui.shapes.Shape)
 @:access(s.ui.elements.Drawable)

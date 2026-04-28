@@ -1,6 +1,6 @@
 package s.graphics.shaders;
 
-import kha.graphics4.ConstantLocation;
+import s.graphics.ConstantLocation;
 
 abstract class Shader2D extends Shader {
 	var mvpCL:ConstantLocation;

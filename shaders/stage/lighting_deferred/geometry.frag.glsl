@@ -5,6 +5,9 @@ uniform sampler2D normalMap;
 uniform sampler2D emissionMap;
 
 in vec2 fragUV;
+#if (S_SPIRV == 1)
+in float fragDepth;
+#endif
 #if (S2D_SPRITE_INSTANCING == 1)
 in mat3 model;
 #else
@@ -25,7 +28,11 @@ void main() {
     vec4 albedoCol = texture(albedoMap, fragUV);
     albedo = albedoCol.rgb / albedoCol.a;
 
+    #if (S_SPIRV == 1)
+    depth = 1.0 - fragDepth;
+    #else
     depth = 1.0 - gl_FragCoord.z;
+    #endif
     emission = texture(emissionMap, fragUV).rgb;
     #if (S2D_LIGHTING_PBR == 1)
     orm = texture(ormMap, fragUV).rgb;

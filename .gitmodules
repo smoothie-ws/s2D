@@ -22,3 +22,6 @@
 [submodule "libs/sextensions"]
 	path = libs/sextensions
 	url = https://github.com/selibs/sextensions
+[submodule "libs/swhitelist"]
+	path = libs/swhitelist
+	url = https://github.com/selibs/swhitelist

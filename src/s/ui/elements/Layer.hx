@@ -15,8 +15,11 @@ class Layer extends Canvas {
 
 	override function update() {
 		super.update();
+		paintDirty = dirty;
+	}
 
-		paintDirty = paintDirty || dirty;
+	override function updateOrder() {
+		super.updateOrder();
 		if (children.dirty)
 			drawable.resize(0);
 	}
@@ -24,17 +27,12 @@ class Layer extends Canvas {
 	override function updateTree() {
 		super.updateTree();
 
-		if (paintDirty) {
-			paintDirty = false;
-			if (isLive)
-				paint(_ -> for (el in drawable)
-					el.draw(texture));
-		}
-	}
+		if (!paintDirty)
+			return;
 
-	override function set_dirty(value:Bool) {
-		if (value)
-			paintDirty = true;
-		return super.set_dirty(value);
+		paintDirty = false;
+		if (isLive)
+			paint(_ -> for (el in drawable)
+				el.draw(texture));
 	}
 }

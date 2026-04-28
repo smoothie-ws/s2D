@@ -1,7 +1,7 @@
 package s.ui;
 
-import s.ui.Alignment;
 import s.ui.Element;
+import s.ui.Alignment;
 
 @:allow(s.ui.Element)
 class AttachedLayout extends s.shortcut.AttachedAttribute<Element> {

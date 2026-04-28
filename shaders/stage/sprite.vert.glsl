@@ -6,6 +6,9 @@ layout(location = 0) in vec2 vertCoord;
 
 layout(location = 0) out vec2 fragCoord;
 layout(location = 1) out vec2 fragUV;
+#if (S_SPIRV == 1)
+out float fragDepth;
+#endif
 
 #if (S2D_SPRITE_INSTANCING != 1)
 uniform float depth;
@@ -30,4 +33,7 @@ void main() {
 
     fragCoord = gl_Position.xy;
     fragUV = cropRect.xy + (vertCoord * 0.5 + 0.5) * cropRect.zw;
+    #if (S_SPIRV == 1)
+    fragDepth = depth;
+    #endif
 }

@@ -1,7 +1,7 @@
 package s.graphics.shaders;
 
 import s.assets.Image;
-import s.graphics.TextureAddressing;
+import s.graphics.TextureParameters;
 
 class ImageShader extends TexturedShader {
 	public function render(context:Context2D, img:Image, sx:Float, sy:Float, sw:Float, sh:Float, dx:Float, dy:Float, dw:Float, dh:Float) {

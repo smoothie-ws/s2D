@@ -86,7 +86,362 @@ function getAllShaders(dirPath) {
     return files;
 }
 
-function assembleShaders(shaderDir, outputDir) {
+function shaderTargetUsesSpirv() {
+    function argValue(name) {
+        for (let i = 0; i < process.argv.length; i++) {
+            const arg = process.argv[i];
+            if (arg === name) {
+                return process.argv[i + 1];
+            }
+            if (arg.startsWith(`${name}=`)) {
+                return arg.substring(name.length + 1);
+            }
+        }
+        return null;
+    }
+
+    const graphics = argValue("--graphics") ?? "default";
+    if (graphics === "vulkan") {
+        return true;
+    }
+    if (graphics !== "default" || typeof platform === "undefined" || typeof Platform === "undefined") {
+        return false;
+    }
+    return platform === Platform.Android || platform === Platform.Linux;
+}
+
+function patchKhaVulkanDescriptorLayouts() {
+    const makePath = process.argv[1];
+    if (!makePath) {
+        return;
+    }
+
+    const pipelinePath = path.join(
+        path.dirname(makePath),
+        "Kore",
+        "Backends",
+        "Graphics5",
+        "Vulkan",
+        "Sources",
+        "kinc",
+        "backend",
+        "graphics5",
+        "pipeline.c.h"
+    );
+    if (!fs.existsSync(pipelinePath)) {
+        return;
+    }
+
+    let source = fs.readFileSync(pipelinePath, "utf8");
+    const writeTexDescOld = `\t\tif (vulkanTextures[i] != NULL) {
+\t\t\ttex_descs[i].sampler = vulkanSamplers[i];
+\t\t\ttex_descs[i].imageView = vulkanTextures[i]->impl.texture.view;
+\t\t\ttexture_count++;
+\t\t}
+\t\telse if (vulkanRenderTargets[i] != NULL) {
+\t\t\ttex_descs[i].sampler = vulkanSamplers[i];
+\t\t\tif (vulkanRenderTargets[i]->impl.stage_depth == i) {
+\t\t\t\ttex_descs[i].imageView = vulkanRenderTargets[i]->impl.depthView;
+\t\t\t\tvulkanRenderTargets[i]->impl.stage_depth = -1;
+\t\t\t}
+\t\t\telse {
+\t\t\t\ttex_descs[i].imageView = vulkanRenderTargets[i]->impl.sourceView;
+\t\t\t}
+\t\t\ttexture_count++;
+\t\t}
+\t\ttex_descs[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;`;
+
+    const writeTexDescNew = `\t\tif (vulkanTextures[i] != NULL) {
+\t\t\ttex_descs[i].sampler = vulkanSamplers[i];
+\t\t\ttex_descs[i].imageView = vulkanTextures[i]->impl.texture.view;
+\t\t\t// sengine: descriptor image layouts match bound resources.
+\t\t\ttex_descs[i].imageLayout = vulkanTextures[i]->impl.texture.imageLayout;
+\t\t\ttexture_count++;
+\t\t}
+\t\telse if (vulkanRenderTargets[i] != NULL) {
+\t\t\ttex_descs[i].sampler = vulkanSamplers[i];
+\t\t\tif (vulkanRenderTargets[i]->impl.stage_depth == i) {
+\t\t\t\ttex_descs[i].imageView = vulkanRenderTargets[i]->impl.depthView;
+\t\t\t\tvulkanRenderTargets[i]->impl.stage_depth = -1;
+\t\t\t}
+\t\t\telse {
+\t\t\t\ttex_descs[i].imageView = vulkanRenderTargets[i]->impl.sourceView;
+\t\t\t}
+\t\t\ttex_descs[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+\t\t\ttexture_count++;
+\t\t}`;
+
+    const inlineTexDescOld = `\t\tif (vulkanTextures[i] != NULL) {
+\t\t\tassert(vulkanSamplers[i] != VK_NULL_HANDLE);
+\t\t\ttex_desc[i].sampler = vulkanSamplers[i];
+\t\t\ttex_desc[i].imageView = vulkanTextures[i]->impl.texture.view;
+\t\t\ttexture_count++;
+\t\t}
+\t\telse if (vulkanRenderTargets[i] != NULL) {
+\t\t\ttex_desc[i].sampler = vulkanSamplers[i];
+\t\t\tif (vulkanRenderTargets[i]->impl.stage_depth == i) {
+\t\t\t\ttex_desc[i].imageView = vulkanRenderTargets[i]->impl.depthView;
+\t\t\t\tvulkanRenderTargets[i]->impl.stage_depth = -1;
+\t\t\t}
+\t\t\telse {
+\t\t\t\ttex_desc[i].imageView = vulkanRenderTargets[i]->impl.sourceView;
+\t\t\t}
+\t\t\ttexture_count++;
+\t\t}
+\t\ttex_desc[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;`;
+
+    const inlineTexDescNew = `\t\tif (vulkanTextures[i] != NULL) {
+\t\t\tassert(vulkanSamplers[i] != VK_NULL_HANDLE);
+\t\t\ttex_desc[i].sampler = vulkanSamplers[i];
+\t\t\ttex_desc[i].imageView = vulkanTextures[i]->impl.texture.view;
+\t\t\t// sengine: descriptor image layouts match bound resources.
+\t\t\ttex_desc[i].imageLayout = vulkanTextures[i]->impl.texture.imageLayout;
+\t\t\ttexture_count++;
+\t\t}
+\t\telse if (vulkanRenderTargets[i] != NULL) {
+\t\t\ttex_desc[i].sampler = vulkanSamplers[i];
+\t\t\tif (vulkanRenderTargets[i]->impl.stage_depth == i) {
+\t\t\t\ttex_desc[i].imageView = vulkanRenderTargets[i]->impl.depthView;
+\t\t\t\tvulkanRenderTargets[i]->impl.stage_depth = -1;
+\t\t\t}
+\t\t\telse {
+\t\t\t\ttex_desc[i].imageView = vulkanRenderTargets[i]->impl.sourceView;
+\t\t\t}
+\t\t\ttex_desc[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+\t\t\ttexture_count++;
+\t\t}`;
+
+    const patched = source
+        .replace(writeTexDescOld, writeTexDescNew)
+        .replace(inlineTexDescOld, inlineTexDescNew);
+
+    if (patched !== source) {
+        fs.writeFileSync(pipelinePath, patched, "utf8");
+    }
+
+    const texturePath = path.join(
+        path.dirname(makePath),
+        "Kore",
+        "Backends",
+        "Graphics5",
+        "Vulkan",
+        "Sources",
+        "kinc",
+        "backend",
+        "graphics5",
+        "texture.c.h"
+    );
+    if (!fs.existsSync(texturePath)) {
+        return;
+    }
+
+    source = fs.readFileSync(texturePath, "utf8");
+    const textureLayoutOld = `\tif (usage & VK_IMAGE_USAGE_STORAGE_BIT) {
+\t\ttex_obj->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+\t}
+\telse {
+\t\ttex_obj->imageLayout = VK_IMAGE_LAYOUT_GENERAL; // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+\t}`;
+    const textureLayoutNew = `\tif (usage & VK_IMAGE_USAGE_STORAGE_BIT) {
+\t\ttex_obj->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+\t}
+\telse {
+\t\t// sengine: sampled textures are used through COMBINED_IMAGE_SAMPLER descriptors.
+\t\ttex_obj->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+\t}`;
+
+    const patchedTexture = source.replace(textureLayoutOld, textureLayoutNew);
+    if (patchedTexture !== source) {
+        fs.writeFileSync(texturePath, patchedTexture, "utf8");
+    }
+
+    const vulkanPath = path.join(
+        path.dirname(makePath),
+        "Kore",
+        "Backends",
+        "Graphics5",
+        "Vulkan",
+        "Sources",
+        "kinc",
+        "backend",
+        "graphics5",
+        "Vulkan.c.h"
+    );
+    if (!fs.existsSync(vulkanPath)) {
+        return;
+    }
+
+    source = fs.readFileSync(vulkanPath, "utf8");
+    if (!source.includes("#include <stdio.h>")) {
+        source = source.replace("#include <stdlib.h>", "#include <stdlib.h>\n#include <stdio.h>");
+    }
+    const debugCallbackOld = `\t\tkinc_log(KINC_LOG_LEVEL_ERROR, "Vulkan ERROR: Code %d : %s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
+\t\tkinc_debug_break();`;
+    const debugCallbackNew = `\t\tkinc_log(KINC_LOG_LEVEL_ERROR, "Vulkan ERROR: Code %d : %s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
+\t\t// sengine: mirror validation errors to stderr so redirected smoke tests can capture them before the debug break.
+\t\tfprintf(stderr, "Vulkan ERROR: Code %d : %s\\n", pCallbackData->messageIdNumber, pCallbackData->pMessage);
+\t\tfflush(stderr);
+\t\tkinc_debug_break();`;
+    const patchedVulkan = source.includes("mirror validation errors to stderr")
+        ? source
+        : source.replace(debugCallbackOld, debugCallbackNew);
+    if (patchedVulkan !== source) {
+        fs.writeFileSync(vulkanPath, patchedVulkan, "utf8");
+    }
+
+    const vulkanUnitPath = path.join(
+        path.dirname(makePath),
+        "Kore",
+        "Backends",
+        "Graphics5",
+        "Vulkan",
+        "Sources",
+        "kinc",
+        "backend",
+        "graphics5",
+        "vulkanunit.c"
+    );
+    if (!fs.existsSync(vulkanUnitPath)) {
+        return;
+    }
+
+    source = fs.readFileSync(vulkanUnitPath, "utf8");
+    const semaphoreGlobalsOld = `static VkSemaphore framebuffer_available;
+static VkSemaphore relay_semaphore;
+static bool wait_for_relay = false;`;
+    const semaphoreGlobalsNew = `static VkSemaphore framebuffer_available;
+#define SENGINE_MAX_SWAPCHAIN_SEMAPHORES 16
+static VkSemaphore relay_semaphores[SENGINE_MAX_SWAPCHAIN_SEMAPHORES];
+static bool wait_for_relay = false;
+
+static VkSemaphore *current_relay_semaphore(void) {
+\tuint32_t image = vk_ctx.windows[vk_ctx.current_window].current_image;
+\treturn &relay_semaphores[image % SENGINE_MAX_SWAPCHAIN_SEMAPHORES];
+}`;
+    const patchedUnit = source.replace(semaphoreGlobalsOld, semaphoreGlobalsNew);
+    let patchedUnitWithPresentReset = patchedUnit;
+    if (!patchedUnitWithPresentReset.includes("static void command_list_did_present(void);")) {
+        patchedUnitWithPresentReset = patchedUnitWithPresentReset.replace(
+            "static void command_list_should_wait_for_framebuffer(void);",
+            "static void command_list_should_wait_for_framebuffer(void);\nstatic void command_list_did_present(void);"
+        );
+    }
+    if (patchedUnitWithPresentReset !== source) {
+        fs.writeFileSync(vulkanUnitPath, patchedUnitWithPresentReset, "utf8");
+    }
+
+    source = fs.readFileSync(vulkanPath, "utf8");
+    const semaphoreCreateOld = `\terr = vkCreateSemaphore(vk_ctx.device, &semInfo, NULL, &relay_semaphore);
+\tassert(!err);`;
+    const semaphoreCreateNew = `\tfor (int i = 0; i < SENGINE_MAX_SWAPCHAIN_SEMAPHORES; ++i) {
+\t\terr = vkCreateSemaphore(vk_ctx.device, &semInfo, NULL, &relay_semaphores[i]);
+\t\tassert(!err);
+\t}`;
+    const presentSemaphoreOld = `\tpresent.pWaitSemaphores = &relay_semaphore;
+\tpresent.waitSemaphoreCount = 1;`;
+    const presentSemaphoreNew = `\tpresent.pWaitSemaphores = NULL;
+\tpresent.waitSemaphoreCount = 0;`;
+    const presentSemaphoreIntermediateOld = `\tVkSemaphore *relay = current_relay_semaphore();
+\tpresent.pWaitSemaphores = relay;
+\tpresent.waitSemaphoreCount = 1;`;
+    const presentSemaphoreConditionalOld = `\tVkSemaphore *relay = current_relay_semaphore();
+\tpresent.pWaitSemaphores = wait_for_relay ? relay : NULL;
+\tpresent.waitSemaphoreCount = wait_for_relay ? 1 : 0;`;
+    const presentRelayResetOld = `\twait_for_relay = false;`;
+    const presentRelayResetNew = `\tcommand_list_did_present();`;
+    const patchedVulkanSemaphores = source
+        .replace(semaphoreCreateOld, semaphoreCreateNew)
+        .replace(presentSemaphoreOld, presentSemaphoreNew)
+        .replace(presentSemaphoreIntermediateOld, presentSemaphoreNew)
+        .replace(presentSemaphoreConditionalOld, presentSemaphoreNew)
+        .replace(presentRelayResetOld, presentRelayResetNew);
+    if (patchedVulkanSemaphores !== source) {
+        fs.writeFileSync(vulkanPath, patchedVulkanSemaphores, "utf8");
+    }
+
+    const commandListPath = path.join(
+        path.dirname(makePath),
+        "Kore",
+        "Backends",
+        "Graphics5",
+        "Vulkan",
+        "Sources",
+        "kinc",
+        "backend",
+        "graphics5",
+        "commandlist.c.h"
+    );
+    if (!fs.existsSync(commandListPath)) {
+        return;
+    }
+
+    source = fs.readFileSync(commandListPath, "utf8");
+    const commandListSemaphoreOld = `\tVkSemaphore semaphores[2] = {framebuffer_available, relay_semaphore};`;
+    const commandListSemaphoreNew = `\tVkSemaphore *relay = current_relay_semaphore();
+\tVkSemaphore semaphores[2] = {framebuffer_available, *relay};`;
+    const commandListSignalOld = `\tsubmit_info.pSignalSemaphores = &relay_semaphore;`;
+    const commandListSignalNew = `\tsubmit_info.pSignalSemaphores = relay;`;
+    const commandListRelayStateOld = `\tVkSemaphore *relay = current_relay_semaphore();
+\tVkSemaphore semaphores[2] = {framebuffer_available, *relay};`;
+    const commandListRelayStateNew = `\tVkSemaphore *relay = current_relay_semaphore();
+\tVkSemaphore semaphores[2] = {framebuffer_available, *relay};
+\tbool signal_relay = wait_for_framebuffer || wait_for_relay;`;
+    const commandListSignalBlockOld = `\tsubmit_info.signalSemaphoreCount = 1;
+\tsubmit_info.pSignalSemaphores = relay;
+\twait_for_relay = true;`;
+    const commandListSignalBlockNew = `\t// sengine: keep Vulkan validation happy by waiting on the submit fence instead of passing a present semaphore around.
+\tsubmit_info.signalSemaphoreCount = 0;
+\tsubmit_info.pSignalSemaphores = NULL;
+\twait_for_relay = false;`;
+    const commandListSignalBlockIntermediateOld = `\tif (signal_relay) {
+\t\tsubmit_info.signalSemaphoreCount = 1;
+\t\tsubmit_info.pSignalSemaphores = relay;
+\t\twait_for_relay = true;
+\t}
+\telse {
+\t\tsubmit_info.signalSemaphoreCount = 0;
+\t\tsubmit_info.pSignalSemaphores = NULL;
+\t}`;
+    const commandListSubmitOld = `\terr = vkQueueSubmit(vk_ctx.queue, 1, &submit_info, list->impl.fence);
+\tassert(!err);`;
+    const commandListSubmitNew = `\terr = vkQueueSubmit(vk_ctx.queue, 1, &submit_info, list->impl.fence);
+\tassert(!err);
+
+\t// sengine: synchronous submit avoids reusing semaphores still owned by the swapchain presentation engine.
+\terr = vkWaitForFences(vk_ctx.device, 1, &list->impl.fence, VK_TRUE, UINT64_MAX);
+\tassert(!err);`;
+    const commandListPresentResetAnchor = `static void command_list_should_wait_for_framebuffer(void) {
+\twait_for_framebuffer = true;
+}`;
+    const commandListPresentResetBlock = `static void command_list_should_wait_for_framebuffer(void) {
+\twait_for_framebuffer = true;
+}
+
+static void command_list_did_present(void) {
+\twait_for_framebuffer = false;
+\twait_for_relay = false;
+}`;
+    let patchedCommandList = source
+        .replace(commandListSemaphoreOld, commandListSemaphoreNew)
+        .replace(commandListSignalOld, commandListSignalNew);
+    if (!patchedCommandList.includes("bool signal_relay = wait_for_framebuffer || wait_for_relay;")) {
+        patchedCommandList = patchedCommandList.replace(commandListRelayStateOld, commandListRelayStateNew);
+    }
+    patchedCommandList = patchedCommandList
+        .replace(commandListSignalBlockOld, commandListSignalBlockNew)
+        .replace(commandListSignalBlockIntermediateOld, commandListSignalBlockNew);
+    if (!patchedCommandList.includes("synchronous submit avoids reusing semaphores")) {
+        patchedCommandList = patchedCommandList.replace(commandListSubmitOld, commandListSubmitNew);
+    }
+    if (!patchedCommandList.includes("static void command_list_did_present(void) {")) {
+        patchedCommandList = patchedCommandList.replace(commandListPresentResetAnchor, commandListPresentResetBlock);
+    }
+    if (patchedCommandList !== source) {
+        fs.writeFileSync(commandListPath, patchedCommandList, "utf8");
+    }
+}
+
+function assembleShaders(shaderDir, outputDir, stripExplicitLocations) {
     if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true });
     } else {
@@ -135,6 +490,16 @@ function assembleShaders(shaderDir, outputDir) {
                     );
                 }
 
+                if (stripExplicitLocations) {
+                    // Kha's SPIR-V pipeline assigns interface locations on its own.
+                    // Keeping explicit GLSL location qualifiers here produces duplicate
+                    // SPIR-V OpDecorate Location entries and fails spirv-val.
+                    shaderSource = shaderSource.replace(
+                        /layout\s*\(\s*location\s*=\s*\d+\s*\)\s+/g,
+                        ""
+                    );
+                }
+
                 fs.writeFileSync(outputPath, shaderSource, "utf8");
             }
         }
@@ -145,7 +510,11 @@ function assembleShaders(shaderDir, outputDir) {
 
 const shaderInputDir = path.join(__dirname, "shaders");
 const shaderOutputDir = path.join(process.cwd(), "build", "shaders_assembled");
-assembleShaders(shaderInputDir, shaderOutputDir);
+const shaderUsesSpirv = shaderTargetUsesSpirv();
+if (shaderUsesSpirv) {
+    patchKhaVulkanDescriptorLayouts();
+}
+assembleShaders(shaderInputDir, shaderOutputDir, shaderUsesSpirv);
 
 let project = new Project("s");
 project.addSources("src");
@@ -212,6 +581,9 @@ for (const def of (process.defines ?? [])) {
         project.addDefine(def);
         defs.push(`${kv[0]} 1`);
     }
+}
+if (shaderUsesSpirv) {
+    defs.push("S_SPIRV 1");
 }
 
 // shaders

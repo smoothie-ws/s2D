@@ -1,18 +1,18 @@
 package s.ui.graphics;
 
-import s.ui.graphics.stage.SpritePass;
+import s.stage2d.graphics.SpritePass;
 #if (S2D_LIGHTING == 1)
 #if (S2D_LIGHTING_DEFERRED == 1)
-import s.ui.graphics.stage.lighting.GeometryPass;
+import s.stage2d.graphics.lighting.GeometryPass;
 #end
-import s.ui.graphics.stage.lighting.LightingPass;
+import s.stage2d.graphics.lighting.LightingPass;
 #end
 import kha.graphics4.VertexStructure;
 import s.graphics.RenderTarget;
-import s.ui.stage.Stage;
+import s.stage2d.Stage;
 
-@:allow(s.ui.stage.Stage)
-@:access(s.ui.stage.Stage)
+@:allow(s.stage2d.Stage)
+@:access(s.stage2d.Stage)
 @:dox(hide)
 class StageRenderer {
 	#if (S2D_LIGHTING == 1)
@@ -31,16 +31,16 @@ class StageRenderer {
 
 		#if (S2D_SPRITE_INSTANCING == 1)
 		structures.push(new VertexStructure());
-		structures[1].instanced = true;
 		structures[1].add("cropRect", Float32_4X);
+		structures[1].instanced = true;
 		structures.push(new VertexStructure());
-		structures[2].instanced = true;
 		structures[2].add("model0", Float32_3X);
 		structures[2].add("model1", Float32_3X);
 		structures[2].add("model2", Float32_3X);
+		structures[2].instanced = true;
 		structures.push(new VertexStructure());
-		structures[3].instanced = true;
 		structures[3].add("depth", Float32_1X);
+		structures[3].instanced = true;
 		#end
 
 		#if (S2D_LIGHTING == 1)

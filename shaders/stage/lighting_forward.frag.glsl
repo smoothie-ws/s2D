@@ -1,6 +1,6 @@
 #version 450
 
-#include "s.ui/std/lighting"
+#include "stage/std/lighting"
 
 // stage uniforms
 uniform mat3 viewProjection;

@@ -1,7 +1,7 @@
 package s.ui.graphics.shapes;
 
-import kha.graphics4.ConstantLocation;
 import s.graphics.RenderTarget;
+import s.graphics.ConstantLocation;
 import s.ui.shapes.Triangle;
 
 @:allow(s.ui.shapes.Triangle)

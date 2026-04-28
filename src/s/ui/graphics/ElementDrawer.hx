@@ -1,7 +1,7 @@
 package s.ui.graphics;
 
-import kha.graphics4.ConstantLocation;
 import s.graphics.RenderTarget;
+import s.graphics.ConstantLocation;
 import s.graphics.shaders.Shader;
 import s.ui.elements.Drawable;
 

@@ -5,9 +5,7 @@ import s.app.Time;
 import s.app.Window;
 import s.app.input.MouseButton;
 import s.math.SMath;
-import s.graphics.Context2D;
 import s.graphics.Context3D;
-import s.graphics.RenderTarget;
 import s.ui.FocusPolicy;
 import s.ui.elements.Layer;
 import s.ui.elements.Interactive;
@@ -35,7 +33,7 @@ class Scene extends Layer {
 		this.width = window.width;
 		this.height = window.height;
 
-		App.onUpdate(() -> if (dirty) updateTree());
+		App.onUpdate(updateTree);
 		window.onRender(render);
 		window.onResized((w, h) -> setSize(w, h));
 
@@ -55,59 +53,64 @@ class Scene extends Layer {
 		k.onHotkey(hotkey -> if (focus?.isEnabled) focus.keyboardHotkey(hotkey));
 	}
 
-	override function update() {
-		super.update();
+	override function updateTree() {
+		if (!dirty)
+			return;
 
-		if (children.dirty)
-			interactive.resize(0);
+		super.updateTree();
+
+		processMouseMoved(window.mouse.x, window.mouse.y, 0, 0);
+
+		if (!children.dirty)
+			return;
+
+		for (el in pressed.copy())
+			if (!interactive.contains(el))
+				while (el.pressedButtons.length > 0)
+					el.release(el.pressedButtons.pop(), window.mouse.x, window.mouse.y);
 	}
 
-	#if debug
-	function drawDebugInfo(ctx:Context2D) {
-		ctx.style.font.setDefault();
-		ctx.style.font.family = "default";
-		ctx.style.font.pixelSize = 14;
+	override function updateOrder()
+		if (children.dirty) {
+			drawable.resize(0);
+			interactive.resize(0);
+		}
+
+	@:access(s.assets.Image)
+	function render(framebuffer:Framebuffer) {
+		final g2 = framebuffer.g2;
+
+		g2.begin(color);
+		g2.drawImage(texture, 0, 0);
+
+		#if debug
+		g2.font = s.assets.Font.get("default");
+		g2.fontSize = 14;
 
 		final time = Time.delta;
 		final fps = Std.int(1.0 / time);
 		var offset = 5;
 
 		inline function drawInfo(text:String) {
-			ctx.style.color = Black;
-			ctx.drawString(text, 6, offset + 1);
-			ctx.style.color = White;
-			ctx.drawString(text, 5, offset);
+			g2.color = Black;
+			g2.drawString(text, 6, offset + 1);
+			g2.color = White;
+			g2.drawString(text, 5, offset);
 			offset += 16;
 		}
 
 		drawInfo("FPS: " + fps);
-		drawInfo("Frame (ms): " + roundTo(time * 1000, 1));
-		// draw("CPU (ms): " + roundTo(Context3D.cpuTime, 1));
-		// draw("GPU (ms): " + roundTo(Context3D.gpuTime, 1));
-		drawInfo("Draw calls: " + Context3D.drawCalls);
-		drawInfo("IB allocations: " + Context3D.ibAllocations);
-		drawInfo("VB allocations: " + Context3D.vbAllocations);
-	}
-	#end
+		drawInfo("LAT: " + roundTo(time * 1000, 1));
+		// draw("CPU: " + roundTo(Context3D.cpuTime, 1));
+		// draw("GPU: " + roundTo(Context3D.gpuTime, 1));
+		drawInfo("DCS: " + Context3D.drawCalls);
+		drawInfo("IBA: " + Context3D.ibAllocations);
+		drawInfo("VBA: " + Context3D.vbAllocations);
 
-	override function updateOrder() {}
+		Context3D.resetDebugInfo();
+		#end
 
-	function render(framebuffer:Framebuffer) {
-		// #if debug
-		// final ctx = texture.context2D;
-		// ctx.begin();
-		// #if debug_element_bounds
-		// if (window.mouse.hovers)
-		// 	descendantAt(window.mouse.x, window.mouse.y)?.drawBounds(ctx);
-		// #end
-		// drawDebugInfo(ctx);
-		// Context3D.resetDebugInfo();
-		// ctx.end();
-		// #end
-
-		framebuffer.g2.begin(color);
-		framebuffer.g2.drawImage(@:privateAccess texture.image, 0, 0);
-		framebuffer.g2.end();
+		g2.end();
 	}
 
 	function adjustFocus(d:Int, policy:FocusPolicy) {

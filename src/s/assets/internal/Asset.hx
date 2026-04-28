@@ -8,6 +8,7 @@ abstract class Asset<T:Resource> implements s.shortcut.Shortcut {
 	public var version:String;
 
 	public var isLoaded(get, never):Bool;
+
 	var deferLoadedSignal:Bool = false;
 
 	@:signal public function loaded():Void;
@@ -15,10 +16,9 @@ abstract class Asset<T:Resource> implements s.shortcut.Shortcut {
 	function new(?name:String)
 		this.name = name;
 
-	inline function notifyLoaded():Void {
+	inline function notifyLoaded():Void
 		if (!deferLoadedSignal)
 			loaded();
-	}
 
 	abstract public function unload():Void;
 

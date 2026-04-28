@@ -1,8 +1,8 @@
 package s.graphics.shaders;
 
-import kha.graphics4.ConstantLocation;
 import s.graphics.FontStyle;
-import s.graphics.TextureAddressing;
+import s.graphics.ConstantLocation;
+import s.graphics.TextureParameters;
 
 class TextShader extends TexturedShader {
 	var sdfRangeCL:ConstantLocation;
@@ -37,6 +37,9 @@ class TextShader extends TexturedShader {
 		if (chars == null || chars.length == 0)
 			return;
 
+		if (!compiled)
+			compile();
+		
 		super.set(context);
 
 		final ctx = context.context;

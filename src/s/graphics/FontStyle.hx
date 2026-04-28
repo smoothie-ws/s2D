@@ -55,8 +55,8 @@ class FontStyle implements s.shortcut.Shortcut {
 
 	// public var backgroundColor:Color = Transparent; // TODO
 	// public var capitalization:FontCapitalization; // TODO
-	public var pointSize(get, set):Float;
-	@:attr(metrics) public var pixelSize(default, set):Int = 18;
+	// public var pointSize(get, set):Float;
+	@:attr(metrics) public var size(default, set):Int = 18;
 
 	// public var preferShaping:Bool;
 	// public var preferTypoLineMetrics:Bool;
@@ -85,7 +85,7 @@ class FontStyle implements s.shortcut.Shortcut {
 		softness = value.softness;
 		outlineColor = value.outlineColor;
 		outlineWidth = value.outlineWidth;
-		pixelSize = value.pixelSize;
+		size = value.size;
 		return this;
 	}
 
@@ -102,12 +102,12 @@ class FontStyle implements s.shortcut.Shortcut {
 		softness = 0.0;
 		outlineColor = Transparent;
 		outlineWidth = 0.0;
-		pixelSize = 18;
+		size = 18;
 		return this;
 	}
 
 	public inline function getAtlas()
-		return font.getAtlas(pixelSize);
+		return font.getAtlas(size);
 
 	inline function copyFontCharTemplate(template:s.assets.internal.font.Font.CachedFontCharTemplate, scale:Float, spacing:Float, out:FontChar):FontChar {
 		if (out == null)
@@ -147,7 +147,7 @@ class FontStyle implements s.shortcut.Shortcut {
 
 	public function copyFontChar(char:Int, out:FontChar = null):FontChar {
 		final atlas = getAtlas();
-		final scale = pixelSize / atlas.size;
+		final scale = size / atlas.size;
 		return copyFontCharTemplate(font.getFontCharTemplate(atlas, char), scale, getSpacing(char), out);
 	}
 
@@ -156,11 +156,11 @@ class FontStyle implements s.shortcut.Shortcut {
 	}
 
 	public function widthOfCharacters(chars:Array<Int>, start:Int, length:Int):Float {
-		if (pixelSize <= 0 || chars == null || length <= 0)
+		if (size <= 0 || chars == null || length <= 0)
 			return 0.0;
 
 		var atlas = getAtlas();
-		var scale = pixelSize / atlas.size;
+		var scale = size / atlas.size;
 		var end = Std.int(Math.min(start + length, chars.length));
 
 		var width = 0.0;
@@ -175,11 +175,11 @@ class FontStyle implements s.shortcut.Shortcut {
 	}
 
 	public function widthOfString(text:String, start:Int, length:Int):Float {
-		if (pixelSize <= 0 || text == null || length <= 0)
+		if (size <= 0 || text == null || length <= 0)
 			return 0.0;
 
 		final atlas = getAtlas();
-		final scale = pixelSize / atlas.size;
+		final scale = size / atlas.size;
 		final end = Std.int(Math.min(start + length, text.length));
 
 		var width = 0.0;
@@ -197,10 +197,10 @@ class FontStyle implements s.shortcut.Shortcut {
 	}
 
 	inline function get_pointSize():Float
-		return pixelSize * 72.0 / s.app.Display.primary.pixelsPerInch;
+		return size * 72.0 / s.app.Display.primary.pixelsPerInch;
 
 	inline function set_pointSize(value:Float):Float {
-		pixelSize = Std.int(value * s.app.Display.primary.pixelsPerInch / 72.0);
+		size = Std.int(value * s.app.Display.primary.pixelsPerInch / 72.0);
 		return value;
 	}
 
@@ -229,5 +229,5 @@ class FontStyle implements s.shortcut.Shortcut {
 		return softness = Math.max(0.0, value);
 
 	inline function set_pixelSize(value:Int):Int
-		return pixelSize = value > 0 ? value : 0;
+		return size = value > 0 ? value : 0;
 }

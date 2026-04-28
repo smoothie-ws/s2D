@@ -10,8 +10,8 @@ import s.app.input.MouseCursor;
 @:allow(s.ui.Scene)
 class Interactive extends Element {
 	final clicks:Map<MouseButton, Float> = [];
+	final pending:Array<MouseButton> = [];
 	final holdTimers:Map<MouseButton, Timer> = [];
-	final pendingClick:Array<MouseButton> = [];
 
 	public var propagateMouseEvents:Bool = false;
 	public var acceptedButtons:MouseButton = MouseButton.Left;
@@ -21,10 +21,10 @@ class Interactive extends Element {
 	public var holdInterval:Float = 0.3;
 	public var doubleClickInterval:Float = 0.5;
 
+	public final pressedButtons:Array<MouseButton> = [];
+
 	@:attr(interaction) public var isEnabled:Bool = true;
 	@:attr(interaction) public var isFocused(default, set):Bool = false;
-
-	@:attr public var pressedButtons:MouseButton = 0;
 
 	@:attr public var isHovered:Bool = false;
 	@:attr public var mouseX:Float = 0.0;
@@ -103,9 +103,10 @@ class Interactive extends Element {
 		mouseX = x;
 		mouseY = y;
 		isHovered = true;
+
 		if (cursor != null && scene != null)
 			scene.window.mouse.cursor = cursor;
-		
+
 		mouseEntered();
 	}
 
@@ -113,10 +114,13 @@ class Interactive extends Element {
 		mouseX = x;
 		mouseY = y;
 		isHovered = false;
+
 		for (b in holdTimers.keys())
 			holdTimers[b].stop();
 		holdTimers.clear();
-		pendingClick.resize(0);
+
+		pending.resize(0);
+
 		if (cursor != null && scene != null)
 			scene.window.mouse.cursor = Default;
 
@@ -136,16 +140,17 @@ class Interactive extends Element {
 
 		pressX = x;
 		pressY = y;
-		pressedButtons |= button;
-		isPressed = pressedButtons.matches(Any);
-		if (isPressed && !scene.pressed.contains(this))
+		isPressed = true;
+
+		if (!scene.pressed.contains(this))
 			scene.pressed.push(this);
 
-		pendingClick.push(button);
+		pending.push(button);
+		pressedButtons.push(button);
 
 		holdTimers[button] = Timer.set(() -> {
 			holdTimers.remove(button);
-			pendingClick.remove(button);
+			pressedButtons.remove(button);
 			mouseHold(button);
 		}, holdInterval);
 
@@ -154,21 +159,21 @@ class Interactive extends Element {
 	}
 
 	public function release(button:MouseButton, x:Float, y:Float) {
-		if (!pressedButtons.matches(button))
+		if (!pressedButtons.remove(button))
 			return;
-
-		pressedButtons -= button;
-		isPressed = pressedButtons.matches(Any);
-		if (!isPressed)
-			scene.pressed.remove(this);
 
 		final timer = holdTimers[button];
 		if (timer != null) {
 			timer.stop();
 			holdTimers.remove(button);
 		}
-		if (pendingClick.remove(button))
+
+		if (pending.remove(button))
 			click(button, x, y);
+
+		isPressed = pressedButtons.length > 0;
+		if (!isPressed)
+			scene.pressed.remove(this);
 
 		mouseButtonReleased(button);
 		mouseReleased(button);

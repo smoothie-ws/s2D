@@ -15,8 +15,10 @@ class Image extends Asset<kha.Image> implements s.shortcut.Shortcut {
 	function unload() {
 		if (!isLoaded)
 			return;
-		image.unload();
-		image = null;
+
+		final resource = image;
+		@:bypassAccessor image = null;
+		resource.unload();
 	}
 
 	function fromResource(resource:kha.Image):Void
@@ -26,8 +28,12 @@ class Image extends Asset<kha.Image> implements s.shortcut.Shortcut {
 		return image;
 
 	inline function set_image(value:kha.Image) {
+		if (image == value)
+			return image;
+
 		image?.unload();
-		if ((image = value) != null)
+		@:bypassAccessor image = value;
+		if (image != null)
 			notifyLoaded();
 		return image;
 	}

@@ -1,15 +1,15 @@
 package s.ui.elements;
 
-import s.graphics.RenderTarget;
 import kha.Image;
+import s.Color;
 import s.math.Mat3;
 import s.geometry.ISize;
 import s.graphics.Context2D;
-import s.graphics.RenderTarget.RenderTargetData;
-import s.graphics.TextureFormat;
+import s.graphics.RenderTarget;
+import s.graphics.TextureParameters;
 import s.graphics.DepthStencilFormat;
 
-class Canvas extends Textured<RenderTargetData> {
+class Canvas extends Textured<RenderTarget> {
 	@:attr(textureParameters) var size:ISize;
 
 	@:attr public var textureSize:ISize;
@@ -17,17 +17,14 @@ class Canvas extends Textured<RenderTargetData> {
 	@:attr(textureParameters) public var samples:Int = 1;
 	@:attr(textureParameters) public var depthStencil:DepthStencilFormat = NoDepthAndStencil;
 
-	public inline function paint(f:Context2D->Void):Void
-		texture?.context2D.draw(true, color, f);
+	public function paint(clear:Bool = true, color:Color = Transparent, f:Context2D->Void):Void
+		texture?.context2D.draw(clear, color, f);
 
 	override function update() {
 		super.update();
 
 		if (textureSizeDirty || textureSize == null && (widthDirty || heightDirty))
-			if (textureSize == null)
-				size = new ISize(width, height);
-			else
-				size = textureSize;
+			size = textureSize ?? new ISize(width, height);
 
 		if (!textureParametersDirty)
 			return;
@@ -48,7 +45,7 @@ class Canvas extends Textured<RenderTargetData> {
 			return;
 
 		if (width > 0 && height > 0)
-			texture.context2D.draw(false, Transparent, ctx -> {
+			paint(ctx -> {
 				ctx.style.color = White;
 				ctx.drawScaledImage(tex, 0.0, 0.0, width, height);
 			});

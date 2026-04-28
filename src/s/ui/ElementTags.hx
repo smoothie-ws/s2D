@@ -1,5 +1,7 @@
 package s.ui;
 
+import s.ui.Element;
+
 using s.extensions.StringExt;
 
 @:forward

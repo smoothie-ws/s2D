@@ -15,11 +15,11 @@ class Text extends Label {
 	}
 
 	override function draw(target:RenderTarget) {
-		// if (text.length == 0 || !font.isLoaded || font.pixelSize == 0)
+		// if (text.length == 0 || !font.isLoaded || font.size == 0)
 		// 	return;
 		// final ctx = target.context2D;
 		// ctx.style.font. = font;
-		// ctx.style.font.pixelSize = font.pixelSize;
+		// ctx.style.font.size = font.size;
 		// ctx.style.color = color;
 		// for (line in lines)
 		// 	ctx.drawString(line.text, line.x, line.y);
@@ -81,7 +81,7 @@ class Text extends Label {
 	// 	}
 	// 	if (linesDirty || fontSizeDirty || lineHeightDirty || lineHeightModeDirty) {
 	// 		var realLineHeight = switch lineHeightMode {
-	// 			case Proportional: font.pixelSize * lineHeight;
+	// 			case Proportional: font.size * lineHeight;
 	// 			case Fixed: lineHeight;
 	// 		}
 	// 		for (l in lines)
@@ -110,7 +110,7 @@ class Text extends Label {
 	// 	}
 	// }
 	// function wrapText() {
-	// 	var k = font.asset._get(font.pixelSize);
+	// 	var k = font.asset._get(font.size);
 	// 	var maxWidth = Math.max(0.0, Math.abs(width) - left.padding - right.padding);
 	// 	lines = [];
 	// 	inline function isNewline(c:Int):Bool
@@ -314,7 +314,7 @@ class Text extends Label {
 	// 		return;
 	// 	final maxHeight = Math.max(0.0, Math.abs(height) - top.padding - bottom.padding);
 	// 	final realLineHeight = switch lineHeightMode {
-	// 		case Proportional: font.pixelSize * lineHeight;
+	// 		case Proportional: font.size * lineHeight;
 	// 		case Fixed: lineHeight;
 	// 	}
 	// 	var visibleHeight = lineCount * realLineHeight;

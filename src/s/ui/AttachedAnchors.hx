@@ -5,12 +5,12 @@ import s.ui.AttachedAnchorLine;
 
 @:allow(s.ui.Element)
 class AttachedAnchors extends s.shortcut.AttachedAttribute<Element> {
-	@:attr(horizontal) public var left:HorizontalAnchor = null;
-	@:attr(horizontal) public var hCenter:HorizontalAnchor = null;
-	@:attr(horizontal) public var right:HorizontalAnchor = null;
-	@:attr(vertical) public var top:VerticalAnchor = null;
-	@:attr(vertical) public var vCenter:VerticalAnchor = null;
-	@:attr(vertical) public var bottom:VerticalAnchor = null;
+	@:attr(horizontal) public var left:HorizontalAnchor;
+	@:attr(horizontal) public var hCenter:HorizontalAnchor;
+	@:attr(horizontal) public var right:HorizontalAnchor;
+	@:attr(vertical) public var top:VerticalAnchor;
+	@:attr(vertical) public var vCenter:VerticalAnchor;
+	@:attr(vertical) public var bottom:VerticalAnchor;
 
 	public function clear() {
 		clearH();
@@ -48,10 +48,7 @@ class AttachedAnchors extends s.shortcut.AttachedAttribute<Element> {
 		this.right = right;
 	}
 
-	overload extern public inline function fillWidth(element:{
-		left:HorizontalAnchor,
-		right:HorizontalAnchor
-	})
+	overload extern public inline function fillWidth(element:{left:HorizontalAnchor, right:HorizontalAnchor})
 		fillWidth(element.left, element.right);
 
 	overload extern public inline function fillWidth(element:Element)

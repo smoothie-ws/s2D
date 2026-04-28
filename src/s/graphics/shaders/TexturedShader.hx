@@ -1,6 +1,6 @@
 package s.graphics.shaders;
 
-import kha.graphics4.TextureUnit;
+import s.graphics.TextureUnit;
 
 abstract class TexturedShader extends Shader2D {
 	var sourceTU:TextureUnit;

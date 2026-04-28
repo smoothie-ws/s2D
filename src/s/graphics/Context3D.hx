@@ -2,11 +2,9 @@ package s.graphics;
 
 import kha.arrays.Float32Array;
 import kha.arrays.Int32Array;
-import kha.graphics4.ConstantLocation;
 import kha.graphics4.Graphics;
 import kha.graphics4.IndexBuffer;
 import kha.graphics4.PipelineState;
-import kha.graphics4.TextureUnit;
 import s.math.Mat3;
 import s.math.Mat4;
 import s.math.SMath;
@@ -18,6 +16,9 @@ import s.math.Vec4;
 import s.math.IVec4;
 import s.assets.Image;
 import s.geometry.Mesh;
+import s.graphics.TextureUnit;
+import s.graphics.ConstantLocation;
+import s.graphics.TextureParameters;
 
 private final logger:Log.Logger = new Log.Logger("RENDER");
 
@@ -79,6 +80,7 @@ private typedef DrawStateBuffer = {
 @:allow(s.graphics.RenderTarget)
 class Context3D {
 	final graphics:Graphics;
+	final owner:RenderTarget;
 	final states:Array<DrawState> = [];
 
 	var targets:Array<kha.Canvas>;
@@ -101,8 +103,9 @@ class Context3D {
 	public final refreshRate:Int;
 	public final instancedRenderingAvailable:Bool;
 
-	function new(graphics:Graphics) {
+	function new(graphics:Graphics, owner:RenderTarget) {
 		this.graphics = graphics;
+		this.owner = owner;
 		vsynced = graphics.vsynced();
 		refreshRate = graphics.refreshRate();
 		instancedRenderingAvailable = graphics.instancedRenderingAvailable();
@@ -119,56 +122,39 @@ class Context3D {
 	inline function applyCommand(command:DrawCommand) {
 		switch command {
 			case Clear(color, depth, stencil):
-				graphics.clear(color, depth, stencil);
-
+				graphics.clear(color, owner?.hasDepthAttachment ? depth : null, owner?.hasStencilAttachment ? stencil : null);
 			case Scissor(x, y, width, height):
 				graphics.scissor(x, y, width, height);
-
 			case DisableScissor:
 				graphics.disableScissor();
-
 			case ConstantBool(location, value):
 				graphics.setBool(location, value);
-
 			case ConstantInt(location, value):
 				graphics.setInt(location, value);
-
 			case ConstantInts(location, value):
 				graphics.setInts(location, value);
-
 			case ConstantIVec2(location, value):
 				graphics.setInt2(location, value.x, value.y);
-
 			case ConstantIVec3(location, value):
 				graphics.setInt3(location, value.x, value.y, value.z);
-
 			case ConstantIVec4(location, value):
 				graphics.setInt4(location, value.x, value.y, value.z, value.w);
-
 			case ConstantFloat(location, value):
 				graphics.setFloat(location, value);
-
 			case ConstantFloats(location, value):
 				graphics.setFloats(location, value);
-
 			case ConstantVec2(location, value):
 				graphics.setVector2(location, value);
-
 			case ConstantVec3(location, value):
 				graphics.setVector3(location, value);
-
 			case ConstantVec4(location, value):
 				graphics.setVector4(location, value);
-
 			case ConstantMat3(location, value):
 				graphics.setMatrix3(location, value);
-
 			case ConstantMat4(location, value):
 				graphics.setMatrix(location, value);
-
 			case ConstantTexture(unit, image):
 				graphics.setTexture(unit, image);
-
 			case ConstantTextureParameters(unit, parameters):
 				graphics.setTextureParameters(unit, parameters.uAddressing, parameters.vAddressing, parameters.minificationFilter,
 					parameters.magnificationFilter, parameters.mipmapFilter);

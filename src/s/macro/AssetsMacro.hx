@@ -181,9 +181,8 @@ class AssetsMacro {
 			}
 
 			@:to
-			inline function toResource():$resType {
+			inline function toResource():$resType
 				return @:privateAccess this.toResource();
-			}
 
 			public static inline function load(name:String, ?location:s.assets.AssetLocation, ?failed:s.assets.AssetError->Void):$abstractType
 				return s.Assets.$loadName(name, location, failed);
@@ -196,7 +195,8 @@ class AssetsMacro {
 			public inline function unload():Bool {
 				if (location != null)
 					return s.Assets.$unloadName(location);
-				return false;
+				this.unload();
+				return true;
 			}
 
 			private inline function get_location():s.assets.AssetLocation

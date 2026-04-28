@@ -1,6 +1,6 @@
 package s.ui.graphics;
 
-import kha.graphics4.TextureUnit;
+import s.graphics.TextureUnit;
 import s.ui.elements.Textured;
 
 @:allow(s.ui.elements.Drawable)

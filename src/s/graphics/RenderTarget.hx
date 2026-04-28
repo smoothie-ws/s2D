@@ -4,6 +4,7 @@ import s.assets.Image;
 import s.graphics.Context1D;
 import s.graphics.Context2D;
 import s.graphics.Context3D;
+import s.graphics.TextureParameters;
 
 /**
  * Render-target texture wrapper with access to 1D, 2D, and 3D graphics contexts.
@@ -54,11 +55,15 @@ extern abstract RenderTarget(RenderTargetData) from RenderTargetData to RenderTa
 		setParameters(width, height, format, depthStencil, antiAliasingSamples);
 	}
 
-	public inline function setParameters(width:Int, height:Int, ?format:TextureFormat, ?depthStencil:DepthStencilFormat, antiAliasingSamples:Int = 1)
+	public inline function setParameters(width:Int, height:Int, ?format:TextureFormat, ?depthStencil:DepthStencilFormat, antiAliasingSamples:Int = 1) {
+		this.applyDepthStencilFormat(depthStencil);
 		@:privateAccess this.image = kha.Image.createRenderTarget(width, height, format, depthStencil, antiAliasingSamples);
+	}
 
-	public inline function setDepthStencilFrom(image:Image)
+	public inline function setDepthStencilFrom(image:Image) {
 		@:privateAccess this.image.setDepthStencilFrom(image);
+		this.inheritDepthStencilAttachment(image);
+	}
 
 	@:to
 	private inline function toResource():kha.Image
@@ -73,7 +78,12 @@ extern abstract RenderTarget(RenderTargetData) from RenderTargetData to RenderTa
 		return this;
 }
 
-class RenderTargetData extends s.assets.internal.image.Image {
+@:allow(s.graphics.RenderTarget)
+private class RenderTargetData extends s.assets.internal.image.Image {
+	public var depthStencilFormat(default, null):DepthStencilFormat = NoDepthAndStencil;
+	public var hasDepthAttachment(default, null):Bool = false;
+	public var hasStencilAttachment(default, null):Bool = false;
+
 	/**
 	 * 1D graphics context for this texture.
 	 *
@@ -105,11 +115,40 @@ class RenderTargetData extends s.assets.internal.image.Image {
 		super.unload();
 	}
 
+	inline function applyDepthStencilFormat(?format:DepthStencilFormat) {
+		depthStencilFormat = resolveDepthStencilFormat(format);
+		hasDepthAttachment = formatHasDepth(depthStencilFormat);
+		hasStencilAttachment = formatHasStencil(depthStencilFormat);
+	}
+
+	function inheritDepthStencilAttachment(image:Image) {
+		final source:Dynamic = image;
+		if (Std.isOfType(source, RenderTargetData)) {
+			final target:RenderTargetData = cast source;
+			depthStencilFormat = target.depthStencilFormat;
+			hasDepthAttachment = target.hasDepthAttachment;
+			hasStencilAttachment = target.hasStencilAttachment;
+		} else
+			applyDepthStencilFormat(DepthAutoStencilAuto);
+	}
+
+	static inline function resolveDepthStencilFormat(?format:DepthStencilFormat):DepthStencilFormat
+		return format == null ? NoDepthAndStencil : format;
+
+	static inline function formatHasDepth(format:DepthStencilFormat):Bool
+		return format != NoDepthAndStencil;
+
+	static inline function formatHasStencil(format:DepthStencilFormat):Bool
+		return switch format {
+			case DepthAutoStencilAuto, Depth24Stencil8, Depth32Stencil8: true;
+			default: false;
+		};
+
 	@:slot(loaded)
 	function updateContext()
 		if (isLoaded) {
-			context3D = new Context3D(image.g4);
+			context3D = new Context3D(image.g4, this);
 			context2D = new Context2D(context3D);
-			context1D = image.g1;
+			context1D = new Context1D(image);
 		}
 }

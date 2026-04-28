@@ -1,6 +1,5 @@
 package s.ui;
 
-import s.ui.AttachedAnchorLine;
 import s.math.Mat3;
 import s.math.SMath;
 import s.geometry.Size;
@@ -8,6 +7,7 @@ import s.geometry.Position;
 import s.ui.Alignment;
 import s.ui.AttachedLayout;
 import s.ui.AttachedAnchors;
+import s.ui.AttachedAnchorLine;
 import s.ui.elements.Layer;
 #if debug_element_bounds
 import s.graphics.Context2D;
@@ -16,7 +16,6 @@ using s.extensions.StringExt;
 #end
 
 @:allow(s.ui.Scene)
-@:allow(s.AttachedAttribute)
 class Element extends Object2D<Element> implements Markup {
 	overload extern public static inline function mapToElement(element:Element, x:Float, y:Float):Position
 		return element.mapFromGlobal(x, y);
@@ -144,7 +143,7 @@ class Element extends Object2D<Element> implements Markup {
 		vCenter = new VerticalAnchor(this);
 		bottom = new VerticalAnchor(this);
 
-		markup(this);
+		// markup(this);
 	}
 
 	overload extern public inline function setPadding(value:Float):Void
@@ -394,7 +393,7 @@ class Element extends Object2D<Element> implements Markup {
 		style.opacity = 0.5;
 		style.font.setDefault();
 		style.font.family = "default";
-		style.font.pixelSize = 16;
+		style.font.size = 16;
 
 		final lm = left.margin;
 		final tm = top.margin;
@@ -429,7 +428,7 @@ class Element extends Object2D<Element> implements Markup {
 		// labels
 		style.color = s.Color.rgb(1.0, 1.0, 1.0);
 		style.opacity = 1.0;
-		final fs = style.font.pixelSize + 5;
+		final fs = style.font.size + 5;
 
 		// labels - titles
 		if (tm >= fs)
@@ -440,14 +439,14 @@ class Element extends Object2D<Element> implements Markup {
 			ctx.drawString("content", left.position + lp + 5, top.position + tp + 5);
 
 		// labels - values
-		style.font.pixelSize = 14;
+		style.font.size = 14;
 
 		// margins
 		var i = 0;
 		for (m in [lm, tm, rm, bm]) {
 			final str = '${Std.int(m)}px';
 			final strWidth = style.font.widthOfCharacters(str.toCharArray(), 0, str.length);
-			final strheight = style.font.pixelSize;
+			final strheight = style.font.size;
 			if (m >= strWidth) {
 				if (i == 0)
 					ctx.drawString(str, left.position - (m + strWidth) / 2, top.position + height / 2);
@@ -468,7 +467,7 @@ class Element extends Object2D<Element> implements Markup {
 		for (p in [lp, tp, rp, bp]) {
 			final str = '${Std.int(p)}px';
 			final strWidth = style.font.widthOfCharacters(str.toCharArray(), 0, str.length);
-			final strheight = style.font.pixelSize;
+			final strheight = style.font.size;
 			if (p >= strWidth) {
 				if (i == 0)
 					ctx.drawString(str, left.position + (p - strWidth) / 2, top.position + height / 2);
@@ -484,11 +483,11 @@ class Element extends Object2D<Element> implements Markup {
 			++i;
 		}
 
-		style.font.pixelSize = 22;
+		style.font.size = 22;
 		final name = toString();
-		ctx.drawString(name, App.input.mouse.x - style.font.widthOfCharacters(name.toCharArray(), 0, name.length), App.input.mouse.y - style.font.pixelSize);
+		ctx.drawString(name, App.input.mouse.x - style.font.widthOfCharacters(name.toCharArray(), 0, name.length), App.input.mouse.y - style.font.size);
 
-		style.font.pixelSize = 16;
+		style.font.size = 16;
 		final rect = '${Std.int(width)} × ${Std.int(height)} at (${Std.int(left.position)}, ${Std.int(top.position)})';
 		ctx.drawString(rect, App.input.mouse.x - style.font.widthOfCharacters(rect.toCharArray(), 0, rect.length), App.input.mouse.y);
 	}

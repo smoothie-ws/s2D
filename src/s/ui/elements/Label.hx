@@ -20,13 +20,13 @@ class Label extends Drawable {
 	@:attr.attached public final font:FontStyle = new FontStyle();
 
 	@:attr(textContent) public var text:String;
-	@:attr public var alignment:Alignment = AlignLeft | AlignTop;
 	@:attr(textContent) public var elideMode:ElideMode = ElideNone;
+	@:attr public var alignment:Alignment = AlignLeft | AlignTop;
 
 	@:readonly @:alias public var displayX:Float = textX;
 	@:readonly @:alias public var displayY:Float = textY;
 	@:readonly @:alias public var displayWidth:Float = textWidth;
-	@:readonly @:alias public var displayHeight:Float = font.pixelSize;
+	@:readonly @:alias public var displayHeight:Float = font.size;
 
 	public function new(text:String = "") {
 		super();
@@ -35,7 +35,7 @@ class Label extends Drawable {
 	}
 
 	function draw(target:s.graphics.RenderTarget) {
-		if (text.length == 0 || !font.isLoaded || font.pixelSize == 0)
+		if (text.length == 0 || !font.isLoaded || font.size == 0)
 			return;
 		final ctx = target.context2D;
 		ctx.pushTransform(realTransform);
@@ -48,7 +48,7 @@ class Label extends Drawable {
 	override function update():Void {
 		super.update();
 
-		if (text.length == 0 || !font.isLoaded || font.pixelSize == 0)
+		if (text.length == 0 || !font.isLoaded || font.size == 0)
 			return;
 
 		final hDirty = left.offsetDirty || right.offsetDirty;
@@ -63,7 +63,7 @@ class Label extends Drawable {
 
 		if (textHorizontalDirty || font.metricsDirty || hDirty || vDirty || alignmentDirty) {
 			textX = alignLineX(textWidth);
-			textY = alignLineY(font.pixelSize);
+			textY = alignLineY(font.size);
 		}
 
 		if (charsAreDirty || textHorizontalDirty)

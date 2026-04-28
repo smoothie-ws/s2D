@@ -6,7 +6,6 @@ import aura.dsp.panner.Panner;
 import aura.dsp.panner.StereoPanner;
 import s.math.Vec3;
 import s.assets.Sound;
-import s.assets.SoundAsset;
 
 /**
  * Audio playback helper bound to a sound asset.

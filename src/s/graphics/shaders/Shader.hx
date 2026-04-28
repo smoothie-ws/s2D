@@ -49,10 +49,14 @@ abstract class Shader {
 			if (state.vertexShader == null)
 				throw "Vertex shader can not be null!";
 			pipeline.vertexShader = Reflect.field(Shaders, state.vertexShader + "_vert");
+			if (pipeline.vertexShader == null)
+				throw 'Couldn\'t find ${state.vertexShader}.vert';
 
 			if (state.fragmentShader == null)
 				throw "Fragment layout can not be null!";
 			pipeline.fragmentShader = Reflect.field(Shaders, state.fragmentShader + "_frag");
+			if (pipeline.fragmentShader == null)
+				throw 'Couldn\'t find ${state.fragmentShader}.frag';
 
 			pipeline.cullMode = state.cullMode ?? pipeline.cullMode;
 			pipeline.depthWrite = state.depthWrite ?? pipeline.depthWrite;

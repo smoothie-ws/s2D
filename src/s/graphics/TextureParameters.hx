@@ -1,5 +1,10 @@
 package s.graphics;
 
+typedef MipMapFilter = kha.graphics4.MipMapFilter;
+typedef TextureFormat = kha.graphics4.TextureFormat;
+typedef TextureFilter = kha.graphics4.TextureFilter;
+typedef TextureAddressing = kha.graphics4.TextureAddressing;
+
 /**
  * Sampler parameters used when binding a texture.
  *

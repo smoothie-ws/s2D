@@ -3,15 +3,22 @@
 uniform vec4 color;
 uniform vec2 start;
 uniform vec2 end;
+uniform float dither;
 uniform sampler2D gradient;
 
 layout(location = 0) in vec2 fragPos;
 layout(location = 1) in vec2 fragUV;
 layout(location = 0) out vec4 fragColor;
 
+float rand(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+}
+
 void main() {
     vec2 dir = end - start;
-    float dirLenSq = max(dot(dir, dir), 0.000001);
-    float t = clamp(dot(fragPos - start, dir) / dirLenSq, 0.0, 1.0);
+    float t = dot(fragPos - start, dir) / max(dot(dir, dir), 1e-6);
+    t = clamp(t + rand(fragPos) * dither, 0.0, 1.0);
     fragColor = texture(gradient, vec2(t, 0.5)) * color;
 }

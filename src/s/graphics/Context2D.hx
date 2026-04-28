@@ -567,9 +567,9 @@ class Context2D implements s.shortcut.Shortcut {
 		var yoffset = 0.0;
 		if (alignment & AlignVCenter != 0 || alignment & AlignBottom != 0) {
 			if (alignment & AlignVCenter != 0)
-				yoffset = -style.font.pixelSize * 0.5;
+				yoffset = -style.font.size * 0.5;
 			else
-				yoffset = -style.font.pixelSize;
+				yoffset = -style.font.size;
 		}
 		drawCharacters(text, start, length, x + xoffset, y + yoffset);
 	}

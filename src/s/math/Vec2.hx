@@ -4,7 +4,6 @@ package s.math;
 import haxe.macro.Expr.ExprOf;
 #end
 import kha.math.FastVector2 as KhaVec2;
-import s.math.SMath;
 
 @:nullSafety
 @:forward.new

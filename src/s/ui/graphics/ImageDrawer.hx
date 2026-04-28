@@ -1,6 +1,6 @@
 package s.ui.graphics;
 
-import kha.graphics4.ConstantLocation;
+import s.graphics.ConstantLocation;
 import s.ui.elements.ImageElement;
 
 class ImageDrawer<T:ImageElement = ImageElement> extends TexturedDrawer<T> {
