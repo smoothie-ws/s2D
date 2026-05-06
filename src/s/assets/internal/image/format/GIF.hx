@@ -143,7 +143,7 @@ class GIF extends AnimatedImageDecoder {
 			DecodeTools.fail("GIF contains no image frames");
 
 		final frameCount = frames.length;
-		final maxTextureSize = getMaxTextureSize();
+		final maxTextureSize = kha.Image.maxSize;
 		atlasColumns = Std.int(Math.min(frameCount, Math.floor(maxTextureSize / frameWidth)));
 		if (atlasColumns < 1)
 			DecodeTools.fail('GIF frame width ${frameWidth} exceeds max texture size $maxTextureSize');
@@ -402,15 +402,5 @@ class GIF extends AnimatedImageDecoder {
 		final copy = Bytes.alloc(bytes.length);
 		copy.blit(0, bytes, 0, bytes.length);
 		return copy;
-	}
-
-	static function getMaxTextureSize():Int {
-		#if js
-		if (kha.SystemImpl.gl != null)
-			return kha.SystemImpl.gl.getParameter(js.html.webgl.RenderingContext.MAX_TEXTURE_SIZE);
-		return 4096;
-		#else
-		return 8192;
-		#end
 	}
 }

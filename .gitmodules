@@ -1,6 +1,3 @@
-[submodule "Kha"]
-	path = Kha
-	url = https://github.com/selibs/Kha
 [submodule "docs/build/html"]
 	path = docs/build/html
 	url = https://github.com/selibs/docs
