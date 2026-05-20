@@ -3,9 +3,10 @@
 uniform vec4 color;
 uniform sampler2D source;
 
-layout(location = 1) in vec2 fragUV;
-layout(location = 0) out vec4 fragColor;
+in vec2 fragUV;
+out vec4 fragColor;
 
 void main() {
-    fragColor = color * texture(source, fragUV);
+    vec4 tex = texture(source, fragUV);
+    fragColor = color * vec4(tex.rgb / tex.a, tex.a);
 }

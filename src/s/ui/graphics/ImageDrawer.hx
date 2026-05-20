@@ -1,15 +1,10 @@
 package s.ui.graphics;
 
-import s.graphics.ConstantLocation;
 import s.ui.elements.ImageElement;
 
 class ImageDrawer<T:ImageElement = ImageElement> extends TexturedDrawer<T> {
-	var clipRectCL:ConstantLocation;
-
-	override function setup() {
-		super.setup();
-		clipRectCL = pipeline.getConstantLocation("clipRect");
-	}
+	function new()
+		super("texture", "image");
 
 	override function setUniforms(target:s.graphics.RenderTarget, element:T) {
 		super.setUniforms(target, element);

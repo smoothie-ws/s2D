@@ -359,49 +359,6 @@ extern enum abstract Color(Int) from Int to Int {
 	/** Fully transparent black. */
 	final Transparent = 0x00000000;
 
-	/** Red channel in the `0.0..1.0` range. */
-	public var r(get, set):Float;
-
-	/** Green channel in the `0.0..1.0` range. */
-	public var g(get, set):Float;
-
-	/** Blue channel in the `0.0..1.0` range. */
-	public var b(get, set):Float;
-
-	/** Alpha channel in the `0.0..1.0` range. */
-	public var a(get, set):Float;
-
-	/**
-	 * Hue component in the `0.0..1.0` range.
-	 *
-	 * `0.0` and `1.0` represent the same hue.
-	 */
-	public var h(get, set):Float;
-
-	/** Saturation component in the `0.0..1.0` range of the HSV color model. */
-	public var s(get, set):Float;
-
-	/** Value component in the `0.0..1.0` range of the HSV color model. */
-	public var v(get, set):Float;
-
-	/** RGB channels as a normalized `Vec3` in `(r, g, b)` order. */
-	public var RGB(get, set):Vec3;
-
-	/** RGBA channels as a normalized `Vec4` in `(r, g, b, a)` order. */
-	public var RGBA(get, set):Vec4;
-
-	/** HSV channels as a normalized `Vec3` in `(h, s, v)` order. */
-	public var HSV(get, set):Vec3;
-
-	/** HSVA channels as a normalized `Vec4` in `(h, s, v, a)` order. */
-	public var HSVA(get, set):Vec4;
-
-	/** HSL channels as a normalized `Vec3` in `(h, s, l)` order. */
-	public var HSL(get, set):Vec3;
-
-	/** HSLA channels as a normalized `Vec4` in `(h, s, l, a)` order. */
-	public var HSLA(get, set):Vec4;
-
 	/**
 	 * Converts a `kha.Color` to `Color`.
 	 *
@@ -409,7 +366,7 @@ extern enum abstract Color(Int) from Int to Int {
 	 * @return The converted color.
 	 */
 	@:from
-	public static inline function fromColor(value:kha.Color):Color
+	public static inline function fromKhaColor(value:kha.Color):Color
 		return value.value;
 
 	/**
@@ -465,6 +422,64 @@ extern enum abstract Color(Int) from Int to Int {
 					colorValue += 0xFF000000;
 				return colorValue | 0;
 		}
+
+	/** Red channel in the `0.0..1.0` range. */
+	public var r(get, set):Float;
+
+	/** Green channel in the `0.0..1.0` range. */
+	public var g(get, set):Float;
+
+	/** Blue channel in the `0.0..1.0` range. */
+	public var b(get, set):Float;
+
+	/** Alpha channel in the `0.0..1.0` range. */
+	public var a(get, set):Float;
+
+	/** Red channel byte. */
+	public var rByte(get, set):Int;
+
+	/** Green channel byte. */
+	public var gByte(get, set):Int;
+
+	/** Blue channel byte. */
+	public var bByte(get, set):Int;
+
+	/** Alpha channel byte. */
+	public var aByte(get, set):Int;
+
+	/**
+	 * Hue component in the `0.0..1.0` range.
+	 *
+	 * `0.0` and `1.0` represent the same hue.
+	 */
+	public var h(get, set):Float;
+
+	/** Saturation component in the `0.0..1.0` range of the HSV color model. */
+	public var s(get, set):Float;
+
+	/** Value component in the `0.0..1.0` range of the HSV color model. */
+	public var v(get, set):Float;
+
+	/** RGB channels as a normalized `Vec3` in `(r, g, b)` order. */
+	public var RGB(get, set):Vec3;
+
+	/** RGBA channels as a normalized `Vec4` in `(r, g, b, a)` order. */
+	public var RGBA(get, set):Vec4;
+
+	/** HSV channels as a normalized `Vec3` in `(h, s, v)` order. */
+	public var HSV(get, set):Vec3;
+
+	/** HSVA channels as a normalized `Vec4` in `(h, s, v, a)` order. */
+	public var HSVA(get, set):Vec4;
+
+	/** HSL channels as a normalized `Vec3` in `(h, s, l)` order. */
+	public var HSL(get, set):Vec3;
+
+	/** HSLA channels as a normalized `Vec4` in `(h, s, l, a)` order. */
+	public var HSLA(get, set):Vec4;
+
+	inline function new(value:Int)
+		this = value;
 
 	/**
 	 * Converts this value to `kha.Color`.
@@ -524,35 +539,67 @@ extern enum abstract Color(Int) from Int to Int {
 	public inline function toVec4():Vec4
 		return new Vec4(r, g, b, a);
 
+	private inline function get_rByte():Int
+		return (this & 0x00ff0000) >>> 16;
+
+	private inline function set_rByte(value:Int):Int {
+		this = (this & 0xff00ffff) | (value << 16);
+		return value;
+	}
+
+	private inline function get_gByte():Int
+		return (this & 0x0000ff00) >>> 8;
+
+	private inline function set_gByte(value:Int):Int {
+		this = (this & 0xffff00ff) | (value << 8);
+		return value;
+	}
+
+	private inline function get_bByte():Int
+		return this & 0x000000ff;
+
+	private inline function set_bByte(value:Int):Int {
+		this = (this & 0xffffff00) | value;
+		return value;
+	}
+
+	private inline function get_aByte():Int
+		return this >>> 24;
+
+	private inline function set_aByte(value:Int):Int {
+		this = (this & 0x00ffffff) | (value << 24);
+		return value;
+	}
+
 	private inline function get_r():Float
-		return ((this & 0x00ff0000) >>> 16) * (1 / 255);
+		return rByte / 255;
 
 	private inline function set_r(value:Float):Float {
-		this = (Std.int(a * 255) << 24) | (Std.int(value * 255) << 16) | (Std.int(g * 255) << 8) | Std.int(b * 255);
+		rByte = (Std.int(value * 255));
 		return value;
 	}
 
 	private inline function get_g():Float
-		return ((this & 0x0000ff00) >>> 8) * (1 / 255);
+		return gByte / 255;
 
 	private inline function set_g(value:Float):Float {
-		this = (Std.int(a * 255) << 24) | (Std.int(r * 255) << 16) | (Std.int(value * 255) << 8) | Std.int(b * 255);
+		gByte = (Std.int(value * 255));
 		return value;
 	}
 
 	private inline function get_b():Float
-		return (this & 0x000000ff) * (1 / 255);
+		return bByte / 255;
 
 	private inline function set_b(value:Float):Float {
-		this = (Std.int(a * 255) << 24) | (Std.int(r * 255) << 16) | (Std.int(g * 255) << 8) | Std.int(value * 255);
+		bByte = (Std.int(value * 255));
 		return value;
 	}
 
 	private inline function get_a():Float
-		return (this >>> 24) * (1 / 255);
+		return aByte / 255;
 
 	private inline function set_a(value:Float):Float {
-		this = (Std.int(value * 255) << 24) | (Std.int(r * 255) << 16) | (Std.int(g * 255) << 8) | Std.int(b * 255);
+		aByte = (Std.int(value * 255));
 		return value;
 	}
 

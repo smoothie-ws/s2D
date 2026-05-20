@@ -72,6 +72,8 @@ private typedef DrawStateBuffer = {
 	var stateId:Int;
 	var commands:Array<DrawCommand>;
 	var meshIndexCount:Int;
+	var reusableGeometry:Bool;
+	var pendingDraw:Bool;
 	var ?pipeline:PipelineState;
 	var ?mesh:Mesh;
 	var ?vertexBuffers:Array<VertexBuffer>;
@@ -116,6 +118,8 @@ class Context3D {
 		return {
 			stateId: stateId,
 			meshIndexCount: 0,
+			reusableGeometry: false,
+			pendingDraw: false,
 			commands: []
 		};
 
@@ -433,6 +437,18 @@ class Context3D {
 			state.steps[stepIndex] = step;
 	}
 
+	function nextBufferAfterCommit(stateId:Int, previous:DrawStateBuffer):DrawStateBuffer {
+		final next = emptyBuffer(stateId);
+		next.pipeline = previous.pipeline;
+		if (previous.reusableGeometry) {
+			next.mesh = previous.mesh;
+			next.meshIndexCount = previous.meshIndexCount;
+			next.vertexBuffers = previous.vertexBuffers;
+			next.reusableGeometry = true;
+		}
+		return next;
+	}
+
 	function commit(instanceCount:Null<Int>, start:Int, count:Int) {
 		if (buffer.pipeline == null)
 			return;
@@ -457,8 +473,12 @@ class Context3D {
 		}
 
 		appendStep(state, buffer.pipeline, drawStart, resolveDrawCount(buffer.meshIndexCount, start, count), instanceCount, buffer.commands);
-		buffer = emptyBuffer(stateId);
+		buffer = nextBufferAfterCommit(stateId, buffer);
 	}
+
+	inline function hasPendingDraw():Bool
+		return buffer.pendingDraw && buffer.pipeline != null && (buffer.mesh != null && buffer.meshIndexCount > 0 || buffer.vertexBuffers != null
+			&& buffer.vertexBuffers.length > 0);
 
 	public inline function reset(?mrt:Array<kha.Canvas>) {
 		targets = mrt;
@@ -473,7 +493,11 @@ class Context3D {
 			return;
 
 		for (command in buffer.commands)
-			applyCommand(command);
+			switch command {
+				case Clear(_, _, _) | Scissor(_, _, _, _) | DisableScissor:
+					applyCommand(command);
+				case _:
+			}
 	}
 
 	public inline function execute() {
@@ -513,6 +537,8 @@ class Context3D {
 					if (currentPipeline != step.pipeline) {
 						graphics.setPipeline(step.pipeline);
 						currentPipeline = step.pipeline;
+						boundTextures.resize(0);
+						boundTextureParams.resize(0);
 					}
 
 					if (step.commandCount > 0)
@@ -564,8 +590,11 @@ class Context3D {
 			logger.error("Failed: " + e.message);
 	}
 
-	public inline function end()
+	public inline function end() {
+		if (hasPendingDraw())
+			draw();
 		execute();
+	}
 
 	public inline function flush(?instanceCount:Int, start:Int = 0, count:Int = -1)
 		commit(instanceCount, start, count);
@@ -576,28 +605,38 @@ class Context3D {
 	public inline function drawInstanced(instanceCount:Int, start:Int = 0, count:Int = -1)
 		commit(instanceCount, start, count);
 
-	public inline function setPipeline(pipeline:PipelineState)
+	public inline function setPipeline(pipeline:PipelineState) {
+		buffer.pendingDraw = true;
 		buffer.pipeline = pipeline;
+	}
 
 	public inline function setMesh(mesh:Mesh) {
+		buffer.pendingDraw = true;
 		buffer.mesh = mesh;
 		buffer.meshIndexCount = meshIndexCount(mesh);
 		buffer.vertexBuffers = null;
+		buffer.reusableGeometry = true;
 	}
 
 	public inline function setVertexBuffers(vertexBuffers:Array<VertexBuffer>) {
+		buffer.pendingDraw = true;
 		buffer.vertexBuffers = vertexBuffers;
 		buffer.mesh = null;
 		buffer.meshIndexCount = 0;
+		buffer.reusableGeometry = true;
 	}
 
 	inline function ensureBufferMesh() {
-		if (buffer.mesh == null)
+		if (buffer.mesh == null || buffer.reusableGeometry) {
 			buffer.mesh = [];
+			buffer.meshIndexCount = 0;
+		}
 		buffer.vertexBuffers = null;
+		buffer.reusableGeometry = false;
 	}
 
 	public inline function addPolygon(p:Polygon) {
+		buffer.pendingDraw = true;
 		ensureBufferMesh();
 		buffer.mesh.push(p);
 		if (p != null && p.length >= 3)
@@ -605,6 +644,7 @@ class Context3D {
 	}
 
 	public inline function addVertex(vertex:Vertex) {
+		buffer.pendingDraw = true;
 		ensureBufferMesh();
 		if (buffer.mesh == null || buffer.mesh.length == 0)
 			buffer.mesh = [[vertex]];
@@ -615,17 +655,20 @@ class Context3D {
 		}
 	}
 
-	public inline function addCommand(command:DrawCommand)
+	public inline function addCommand(command:DrawCommand, drawCommand:Bool = true) {
+		if (drawCommand)
+			buffer.pendingDraw = true;
 		buffer.commands.push(command);
+	}
 
 	public inline function clear(?color:Color, ?depth:Float, ?stencil:Int)
-		addCommand(Clear(color, depth, stencil));
+		addCommand(Clear(color, depth, stencil), false);
 
 	public inline function scissor(x:Int, y:Int, width:Int, height:Int)
-		addCommand(Scissor(x, y, width, height));
+		addCommand(Scissor(x, y, width, height), false);
 
 	public inline function disableScissor()
-		addCommand(DisableScissor);
+		addCommand(DisableScissor, false);
 
 	public inline function setBool(location:ConstantLocation, value:Bool)
 		addCommand(ConstantBool(location, value));

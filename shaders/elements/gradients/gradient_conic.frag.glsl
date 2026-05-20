@@ -6,9 +6,9 @@ uniform vec2 end;
 uniform float dither;
 uniform sampler2D gradient;
 
-layout(location = 0) in vec2 fragPos;
-layout(location = 1) in vec2 fragUV;
-layout(location = 0) out vec4 fragColor;
+in vec2 fragPos;
+in vec2 fragUV;
+out vec4 fragColor;
 
 const float PI = 3.14159265358979323846;
 const float TAU = 6.28318530717958647692;

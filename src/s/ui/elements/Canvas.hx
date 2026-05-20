@@ -30,6 +30,7 @@ class Canvas extends Textured<RenderTarget> {
 			return;
 
 		var tex = texture;
+		
 		final texWidth = size.width > 0 ? size.width : 1;
 		final texHeight = size.height > 0 ? size.height : 1;
 		final drawWidth = width > 0 ? width : 1;
@@ -49,6 +50,7 @@ class Canvas extends Textured<RenderTarget> {
 				ctx.style.color = White;
 				ctx.drawScaledImage(tex, 0.0, 0.0, width, height);
 			});
+
 		tex.unload();
 	}
 }

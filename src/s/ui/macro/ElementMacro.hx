@@ -151,6 +151,7 @@ class ElementMacro {
 		"element" => "s.ui.Element",
 		// controls
 		"button" => "s.ui.controls.Button",
+		"slider" => "s.ui.controls.Slider",
 		// "input" => "s.ui.controls.TextInput",
 		// "edit" => "s.ui.elements.elements.TextEdit",
 		// elements
@@ -183,14 +184,11 @@ class ElementMacro {
 		// "progress" => "s.ui.widgets.ProgressBar",
 		// "scroll" => "s.ui.widgets.ScrollView",
 		// stage
-		// "stage" => "s.ui.Stage"
+		"stage2d" => "s.stage2d.Stage"
 	];
 
 	public static function init() {
-		Compiler.registerCustomMetadata({
-			metadata: ":ui.markup",
-			doc: "A"
-		});
+		Compiler.registerCustomMetadata({metadata: ":ui.markup", doc: ""});
 		Compiler.addGlobalMetadata("", "@:build(s.ui.macro.ElementMacro.build())", true, true, true);
 	}
 
@@ -264,6 +262,7 @@ class ElementMacro {
 	static function buildMarkup(field:Field) {
 		var i = 0;
 		var stack:Array<Expr> = [macro parent];
+		var returnRef:Null<Expr> = null;
 
 		inline function currentRef():Expr
 			return stack[stack.length - 1];
@@ -271,10 +270,20 @@ class ElementMacro {
 		inline function parentRef():Expr
 			return stack.length > 1 ? stack[stack.length - 2] : macro parent;
 
-		function transform(expr:Expr) {
+		function transform(expr:Expr, topLevel = false) {
 			function addEl(meta:MetadataEntry, expr:Expr, pos:Position, ?varData:{name:String, type:Null<ComplexType>, isFinal:Bool}, ?assignRef:Expr) {
-				var elCls = getClassPath(meta.name);
-				var ctor = macro @:pos(pos) new $elCls($a{meta.params ?? []});
+				var ctor = if (meta.name != "markup") {
+					var tp = getClassPath(meta.name);
+					macro @:pos(pos) new $tp($a{meta.params ?? []});
+				} else switch meta.params {
+					case [expr]: switch expr.expr {
+							case ECall(e, params): macro @:pos(expr.pos) $e($a{[currentRef()].concat(params)});
+							default:
+								Context.error("Markup function call expected", meta.pos);
+						}
+					default:
+						Context.error("Markup function call expected", meta.pos);
+				}
 				var elRef:Expr;
 				var elExprs = [];
 
@@ -299,6 +308,9 @@ class ElementMacro {
 					elRef = macro @:pos(pos) $i{elName};
 					elExprs.push(macro @:pos(pos) var $elName = $ctor);
 				}
+
+				if (topLevel && stack.length == 1 && returnRef == null)
+					returnRef = elRef;
 
 				switch expr.expr {
 					case EBinop(OpAssign, e1, e2):
@@ -333,14 +345,13 @@ class ElementMacro {
 				case EBlock(exprs):
 					var out:Array<Expr> = [];
 					for (e in exprs)
-						out = out.concat(transform(e));
+						out = out.concat(transform(e, topLevel));
 					return out;
-				case EConst(CIdent(s)) if (s == "$element"):
-					expr = currentRef();
-					return transform(expr);
 				case EConst(CIdent(s)) if (s.charAt(0) == "$"):
 					if (s == "$parent")
 						expr = parentRef();
+					else if (s == "$element")
+						expr = currentRef();
 					else
 						expr.expr = EField(currentRef(), s.substr(1));
 					return transform(expr);
@@ -392,7 +403,7 @@ class ElementMacro {
 											{
 												name: v.name,
 												type: v.type,
-												expr: v.expr,
+												expr: block(transform(v.expr)),
 												isFinal: v.isFinal
 											}
 										])
@@ -420,20 +431,23 @@ class ElementMacro {
 		}
 
 		var expr = extractExpr(field);
+		var ret = null;
 		var args = switch field.kind {
 			case FFun(f):
+				ret = f.ret;
 				f.args;
 			default:
 				[];
 		}
-		
+
 		args.unshift({name: "parent", type: macro :s.ui.Element});
 
 		if (expr != null)
 			field.kind = FFun({
 				args: args,
-				expr: block(transform(expr).concat([macro return parent])),
-				ret: macro :s.ui.Element
+				expr: block(transform(expr, true).concat([ret == null
+					|| returnRef == null ? macro return parent : macro return $returnRef])),
+				ret: ret
 			});
 	}
 

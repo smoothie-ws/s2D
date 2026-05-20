@@ -1,6 +1,7 @@
 package s.ui.elements;
 
 import s.assets.Image;
+import s.graphics.RenderTarget;
 
 class Icon<T:Image = Image> extends Textured<T> {
 	/**
@@ -21,5 +22,12 @@ class Icon<T:Image = Image> extends Textured<T> {
 	public function new(?source:T) {
 		super();
 		this.source = source;
+	}
+
+	override function draw(target:RenderTarget) {
+		if (!isLoaded)
+			return;
+
+		s.ui.graphics.IconDrawer.shader.render(target, cast this);
 	}
 }

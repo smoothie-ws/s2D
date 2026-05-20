@@ -126,6 +126,9 @@ class Element extends Object2D<Element> implements Markup {
 	@:attr(origin) public var originX:Float = Math.NaN;
 	@:attr(origin) public var originY:Float = Math.NaN;
 
+	@:attr(transform) public var inheritTransform:Bool = true;
+	@:attr(transform) public var propagateTransform:Bool = true;
+
 	public function new(?tags:ElementTags) {
 		super();
 
@@ -143,8 +146,11 @@ class Element extends Object2D<Element> implements Markup {
 		vCenter = new VerticalAnchor(this);
 		bottom = new VerticalAnchor(this);
 
-		// markup(this);
+		markup(this);
 	}
+
+	public function setOpacity(value:Float):Float
+		return opacity = value;
 
 	overload extern public inline function setPadding(value:Float):Void
 		setPadding(value, value, value, value);
@@ -354,7 +360,7 @@ class Element extends Object2D<Element> implements Markup {
 
 		if (realOriginDirty || transformDirty || parentDirty || parent?.realTransformDirty) {
 			realTransform = Mat3.translation(-realOriginX, -realOriginY) * transform * Mat3.translation(realOriginX, realOriginY);
-			if (parent != null)
+			if (parent != null && parent.propagateTransform && inheritTransform)
 				realTransform *= parent.realTransform;
 			realTransformInverted.setFrom(inverse(realTransform));
 		}

@@ -10,8 +10,8 @@ uniform float borderSoftness;
 uniform vec2 point1;
 uniform vec2 point2;
 uniform vec2 point3;
-layout(location = 0) in vec2 fragPos;
-layout(location = 0) out vec4 fragColor;
+in vec2 fragPos;
+out vec4 fragColor;
 
 float cross2(vec2 a, vec2 b) {
     return a.x * b.y - a.y * b.x;

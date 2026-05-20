@@ -5,6 +5,11 @@ import s.math.Mat3;
 
 abstract class Object2D<T:Object2D<T>> extends Object<T> {
 	@:attr(transformLocal) final transform:Mat3 = new Mat3();
+	var localScaleX:Float = 1.0;
+	var localScaleY:Float = 1.0;
+	var localRotation:Float = 0.0;
+	var localShearX:Float = 0.0;
+	var localShearY:Float = 0.0;
 
 	public var translationX(get, set):Float;
 	public var translationY(get, set):Float;
@@ -56,7 +61,11 @@ abstract class Object2D<T:Object2D<T>> extends Object<T> {
 	}
 
 	extern overload public inline function scale(x:Float, y:Float) {
-		transform *= Mat3.scale(x, y);
+		localScaleX *= x;
+		localShearX *= x;
+		localShearY *= y;
+		localScaleY *= y;
+		updateLinear();
 		transformDirty = true;
 	}
 
@@ -67,12 +76,30 @@ abstract class Object2D<T:Object2D<T>> extends Object<T> {
 		scale(value, value);
 
 	extern overload public inline function rotate(value:Float) {
-		transform *= Mat3.rotation(value);
+		var c = Math.cos(value);
+		var s = Math.sin(value);
+		var sx = localScaleX;
+		var shx = localShearX;
+		var shy = localShearY;
+		var sy = localScaleY;
+		localScaleX = sx * c + shy * s;
+		localShearX = shx * c + sy * s;
+		localShearY = -sx * s + shy * c;
+		localScaleY = -shx * s + sy * c;
+		updateLinear();
 		transformDirty = true;
 	}
 
 	extern overload public inline function shear(x:Float, y:Float) {
-		transform *= Mat3.shear(x, y);
+		var sx = localScaleX;
+		var shx = localShearX;
+		var shy = localShearY;
+		var sy = localScaleY;
+		localScaleX = sx + shy * x;
+		localShearX = shx + sy * x;
+		localShearY = sx * y + shy;
+		localScaleY = shx * y + sy;
+		updateLinear();
 		transformDirty = true;
 	}
 
@@ -127,81 +154,62 @@ abstract class Object2D<T:Object2D<T>> extends Object<T> {
 	}
 
 	inline function get_scaleX():Float
-		return local00(rotation);
+		return localScaleX;
 
 	inline function set_scaleX(value:Float) {
 		transformDirty = true;
-		setLinear(rotation, value, scaleY, shearX, shearY);
-		return value;
+		localScaleX = value;
+		updateLinear();
+		return localScaleX;
 	}
 
 	inline function get_scaleY():Float
-		return local11(rotation);
+		return localScaleY;
 
 	inline function set_scaleY(value:Float) {
 		transformDirty = true;
-		setLinear(rotation, scaleX, value, shearX, shearY);
-		return value;
+		localScaleY = value;
+		updateLinear();
+		return localScaleY;
 	}
 
 	inline function get_rotation():Float
-		return Math.atan2(transform._10 - transform._01, transform._00 + transform._11);
+		return localRotation;
 
 	inline function set_rotation(value:Float) {
 		transformDirty = true;
-		setLinear(value, scaleX, scaleY, shearX, shearY);
-		return value;
+		localRotation = value;
+		updateLinear();
+		return localRotation;
 	}
 
 	inline function get_shearX():Float
-		return local10(rotation);
+		return localShearX;
 
 	inline function set_shearX(value:Float) {
 		transformDirty = true;
-		setLinear(rotation, scaleX, scaleY, value, shearY);
-		return value;
+		localShearX = value;
+		updateLinear();
+		return localShearX;
 	}
 
 	inline function get_shearY():Float
-		return local01(rotation);
+		return localShearY;
 
 	inline function set_shearY(value:Float) {
 		transformDirty = true;
-		setLinear(rotation, scaleX, scaleY, shearX, value);
-		return value;
+		localShearY = value;
+		updateLinear();
+		return localShearY;
 	}
 
-	inline function setLinear(rotation:Float, scaleX:Float, scaleY:Float, shearX:Float, shearY:Float) {
-		var c = Math.cos(rotation);
-		var s = Math.sin(rotation);
+	inline function updateLinear() {
+		var c = Math.cos(localRotation);
+		var s = Math.sin(localRotation);
 
-		transform._00 = c * scaleX - s * shearX;
-		transform._10 = s * scaleX + c * shearX;
-		transform._01 = c * shearY - s * scaleY;
-		transform._11 = s * shearY + c * scaleY;
-	}
-
-	inline function local00(rotation:Float):Float {
-		var c = Math.cos(rotation);
-		var s = Math.sin(rotation);
-		return c * transform._00 + s * transform._10;
-	}
-
-	inline function local10(rotation:Float):Float {
-		var c = Math.cos(rotation);
-		var s = Math.sin(rotation);
-		return -s * transform._00 + c * transform._10;
-	}
-
-	inline function local01(rotation:Float):Float {
-		var c = Math.cos(rotation);
-		var s = Math.sin(rotation);
-		return c * transform._01 + s * transform._11;
-	}
-
-	inline function local11(rotation:Float):Float {
-		var c = Math.cos(rotation);
-		var s = Math.sin(rotation);
-		return -s * transform._01 + c * transform._11;
+		transform._00 = c * localScaleX - s * localShearX;
+		transform._10 = s * localScaleX + c * localShearX;
+		transform._01 = c * localShearY - s * localScaleY;
+		transform._11 = s * localShearY + c * localScaleY;
 	}
 }

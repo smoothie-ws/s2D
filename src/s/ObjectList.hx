@@ -23,7 +23,7 @@ extern abstract ObjectList<T:Object<T>>(ObjectListData<T>) to ObjectListData<T> 
 		return setObjectParent(list.pop(), null);
 
 	public inline function add(x:T):T {
-		if (x == null || contains(x))
+		if (x == null || x == object || contains(x))
 			return x;
 		list.push(x);
 		return setObjectParent(x, object);
@@ -52,14 +52,14 @@ extern abstract ObjectList<T:Object<T>>(ObjectListData<T>) to ObjectListData<T> 
 		return list.toString();
 
 	public inline function unshift(x:T):T {
-		if (x == null || contains(x))
+		if (x == null || x == object || contains(x))
 			return x;
 		list.unshift(x);
 		return setObjectParent(x, object);
 	}
 
 	public inline function insert(pos:Int, x:T):T {
-		if (x == null || contains(x))
+		if (x == null || x == object || contains(x))
 			return x;
 		list.insert(pos, x);
 		return setObjectParent(x, object);
@@ -137,7 +137,7 @@ extern abstract ObjectList<T:Object<T>>(ObjectListData<T>) to ObjectListData<T> 
 	}
 
 	private inline function setObjectParent(x:T, p:T) @:privateAccess {
-		if (x != null) {
+		if (x != null && x != object) {
 			dirty = true;
 			x.parentDirty = true;
 			@:bypassAccessor x.parent = p;

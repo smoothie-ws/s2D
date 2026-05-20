@@ -67,7 +67,7 @@ class FSM {
 	 * cannot do anything until a state is assigned.
 	 */
 	public function new(state:State)
-		current = state;
+		@:bypassAccessor current = state;
 
 	/**
 	 * Transitions to another state if the current state defines a transition for it.
@@ -77,18 +77,18 @@ class FSM {
 	 *
 	 * @param to Target state.
 	 */
-	public function goto(to:State) {
-		if (current == null)
-			return;
+	public function goto(to:State):Bool {
+		if (to == null || current == null || !current.has(to))
+			return false;
 		var transition = current[to];
-		if (transition != null) {
-			@:bypassAccessor current = to;
+		if (transition != null)
 			transition();
-		}
+		@:bypassAccessor current = to;
+		return true;
 	}
 
 	function set_current(value:State) {
 		goto(value);
-		return current = value;
+		return current;
 	}
 }

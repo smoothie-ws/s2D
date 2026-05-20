@@ -33,16 +33,13 @@ enum FontCapitalization {
 @:allow(s.graphics.shaders.TextShader)
 class FontStyle implements s.shortcut.Shortcut {
 	var font:Font = "default";
-
-	var italicSlant:Float = 0.0;
 	var sdfWeight:Float = 0.0;
+	var italicSlant:Float = 0.0;
 
 	public var family(default, set):String = "default";
 
 	@:inject(setSdfWeight) public var bold:Bool = false;
 	public var italic(default, set):Bool = false;
-	public var strikeout:Bool = false; // TODO
-	public var underline:Bool = false; // TODO
 	public var snapToPixel:Bool = true;
 
 	@:attr(spacing) public var wordSpacing:Float = 0.0;
@@ -53,22 +50,12 @@ class FontStyle implements s.shortcut.Shortcut {
 	public var outlineColor:Color = Transparent;
 	public var outlineWidth:Float = 0.0;
 
-	// public var backgroundColor:Color = Transparent; // TODO
-	// public var capitalization:FontCapitalization; // TODO
-	// public var pointSize(get, set):Float;
 	@:attr(metrics) public var size(default, set):Int = 18;
 
-	// public var preferShaping:Bool;
-	// public var preferTypoLineMetrics:Bool;
-	// public var styleName:String;
-	// public var variableAxes:object;
-	// public var contextFontMerging:Bool;
-	// public var features:object;
-	// public var hintingPreference:enumeration;
-	// public var kerning:Bool;
 	@:readonly @:alias public var isLoaded:Bool = font.isLoaded;
 
-	public function new() {}
+	public function new()
+		font.onLoaded(loadFont);
 
 	public function copyFrom(value:FontStyle):FontStyle {
 		if (value == null)
@@ -76,8 +63,6 @@ class FontStyle implements s.shortcut.Shortcut {
 		family = value.family;
 		bold = value.bold;
 		italic = value.italic;
-		strikeout = value.strikeout;
-		underline = value.underline;
 		snapToPixel = value.snapToPixel;
 		wordSpacing = value.wordSpacing;
 		letterSpacing = value.letterSpacing;
@@ -93,8 +78,6 @@ class FontStyle implements s.shortcut.Shortcut {
 		family = "default";
 		bold = false;
 		italic = false;
-		strikeout = false;
-		underline = false;
 		snapToPixel = true;
 		wordSpacing = 0.0;
 		letterSpacing = 0.0;
@@ -209,10 +192,15 @@ class FontStyle implements s.shortcut.Shortcut {
 			value = "default";
 		if (family == value)
 			return family;
-
+		font.offLoaded(loadFont);
 		font = value;
+		font.onLoaded(loadFont);
+		metricsDirty = true;
 		return family = value;
 	}
+
+	function loadFont()
+		metricsDirty = true;
 
 	inline function setSdfWeight()
 		sdfWeight = ((weight : Int) - (FontWeight.Medium : Int)) / 400.0 * 0.5 + (bold ? 0.75 : 0.0);

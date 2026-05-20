@@ -63,7 +63,7 @@ class PositionerMacro {
 
 			for (c in children)
 				if (c.isVisible) {
-					size += c.$l;
+					size += c.$l + c.$s.margin + c.$e.margin;
 					items.push(c);
 				}
 			if (items.length > 1)

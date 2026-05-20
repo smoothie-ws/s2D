@@ -142,7 +142,7 @@ class Interactive extends Element {
 		pressY = y;
 		isPressed = true;
 
-		if (!scene.pressed.contains(this))
+		if (scene != null && !scene.pressed.contains(this))
 			scene.pressed.push(this);
 
 		pending.push(button);
@@ -150,7 +150,7 @@ class Interactive extends Element {
 
 		holdTimers[button] = Timer.set(() -> {
 			holdTimers.remove(button);
-			pressedButtons.remove(button);
+			pending.remove(button);
 			mouseHold(button);
 		}, holdInterval);
 
@@ -172,7 +172,7 @@ class Interactive extends Element {
 			click(button, x, y);
 
 		isPressed = pressedButtons.length > 0;
-		if (!isPressed)
+		if (scene != null && !isPressed)
 			scene.pressed.remove(this);
 
 		mouseButtonReleased(button);
@@ -210,7 +210,7 @@ class Interactive extends Element {
 	override function update() {
 		super.update();
 
-		if (realVisible && layer.children.dirty)
+		if (scene != null && realVisible && layer.children.dirty)
 			scene.interactive.unshift(this);
 	}
 

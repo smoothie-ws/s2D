@@ -6,9 +6,9 @@ uniform vec2 end;
 uniform float dither;
 uniform sampler2D gradient;
 
-layout(location = 0) in vec2 fragPos;
-layout(location = 1) in vec2 fragUV;
-layout(location = 0) out vec4 fragColor;
+in vec2 fragPos;
+in vec2 fragUV;
+out vec4 fragColor;
 
 float rand(vec2 p) {
     vec3 p3 = fract(vec3(p.xyx) * 0.1031);

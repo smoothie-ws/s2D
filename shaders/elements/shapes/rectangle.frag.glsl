@@ -8,8 +8,8 @@ uniform vec4 borderColor;
 uniform float borderWidth;
 uniform float borderSoftness;
 
-layout(location = 0) in vec2 fragPos;
-layout(location = 0) out vec4 fragColor;
+in vec2 fragPos;
+out vec4 fragColor;
 
 float sdf(vec2 center, vec2 size) {
     vec2 q = abs(center) - size + radius;

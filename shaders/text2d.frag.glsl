@@ -9,8 +9,8 @@ uniform float weight;
 uniform vec2 sourceInvSize;
 uniform sampler2D source;
 
-layout(location = 1) in vec2 fragUV;
-layout(location = 0) out vec4 fragColor;
+in vec2 fragUV;
+out vec4 fragColor;
 
 const float alphaFringeClip = 0.03;
 

@@ -66,11 +66,12 @@ class Timer {
 	 * @return `true` if the timer was started.
 	 */
 	public function start(lock:Bool = true):Bool {
-		if (!lock || !started) {
-			slot = Time.notifyOnTime(callback, Time.time + delay);
-			return true;
-		}
-		return false;
+		if (lock && started)
+			return false;
+		if (started)
+			stop();
+		slot = Time.notifyOnTime(callback, Time.time + delay);
+		return true;
 	}
 
 	/**
@@ -79,8 +80,11 @@ class Timer {
 	 * This also restores the original callback when the timer had been configured
 	 * through [`repeat`](s.Timer.repeat) or [`loop`](s.Timer.loop).
 	 */
-	public function stop()
-		return Time.timeListeners.remove(slot);
+	public function stop():Bool {
+		final removed = slot != null && Time.timeListeners.remove(slot);
+		slot = null;
+		return removed;
+	}
 
 	/**
 	 * Starts the timer repeatedly.
@@ -94,25 +98,24 @@ class Timer {
 	public function repeat(count:Int = 1, lock:Bool = true):Bool {
 		if (count < 0)
 			return false;
-		if (!lock || !started) {
-			if (count > 0)
-				slot.callback = () -> {
-					callback();
-					count--;
-					if (count > 0)
-						slot = Time.notifyOnTime(slot.callback, Time.time + delay);
-					else
-						slot.callback = callback;
-				};
-			else
-				slot.callback = () -> {
-					callback();
-					slot = Time.notifyOnTime(slot.callback, Time.time + delay);
-				};
-			slot = Time.notifyOnTime(slot.callback, Time.time + delay);
-			return true;
-		}
-		return false;
+		if (lock && started)
+			return false;
+		if (started)
+			stop();
+
+		final loop = count == 0;
+		var remaining = count;
+		var repeatCallback:Void->Void = null;
+		repeatCallback = () -> {
+			callback();
+			if (!loop && --remaining <= 0) {
+				slot = null;
+				return;
+			}
+			slot = Time.notifyOnTime(repeatCallback, Time.time + delay);
+		};
+		slot = Time.notifyOnTime(repeatCallback, Time.time + delay);
+		return true;
 	}
 
 	/**

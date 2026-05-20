@@ -8,8 +8,8 @@ uniform float borderWidth;
 uniform vec4 borderColor;
 uniform float borderSoftness;
 
-layout(location = 0) in vec2 fragPos;
-layout(location = 0) out vec4 fragColor;
+in vec2 fragPos;
+out vec4 fragColor;
 
 float sdf(vec2 p, vec2 r) {
     vec2 safeR = max(r, vec2(1e-5));

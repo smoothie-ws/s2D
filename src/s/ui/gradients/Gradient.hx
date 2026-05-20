@@ -1,7 +1,6 @@
 package s.ui.gradients;
 
 import haxe.io.Bytes;
-import kha.graphics4.TextureFormat;
 import s.math.Vec2;
 import s.math.Interpolation;
 import s.assets.Image;

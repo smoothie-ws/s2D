@@ -150,7 +150,7 @@ class ImageElement<T:Image = Image> extends Icon<T> {
 		final hBoundsDirty = left.positionDirty || right.positionDirty;
 		final vBoundsDirty = top.positionDirty || bottom.positionDirty;
 
-		if (!(textureDirty || fillModeDirty || sourceClipRectDirty || alignmentDirty || hBoundsDirty || vBoundsDirty))
+		if (!isLoaded || !(textureDirty || fillModeDirty || sourceClipRectDirty || alignmentDirty || hBoundsDirty || vBoundsDirty))
 			return;
 
 		final imageWidth = texture.width;

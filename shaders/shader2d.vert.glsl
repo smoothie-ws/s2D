@@ -2,9 +2,9 @@
 
 uniform mat3 mvp;
 
-layout(location = 0) in vec2 vertPos;
-layout(location = 1) in vec2 vertUV;
-layout(location = 0) out vec2 fragUV;
+in vec2 vertPos;
+in vec2 vertUV;
+out vec2 fragUV;
 
 void main() {
     fragUV = vertUV;

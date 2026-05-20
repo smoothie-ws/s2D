@@ -5,7 +5,6 @@ import haxe.ds.Vector;
 import kha.Blob;
 import kha.Kravur;
 import kha.graphics2.truetype.StbTruetype;
-import s.Assets;
 
 private typedef GlyphPoint = {
 	var x:Float;
@@ -29,6 +28,40 @@ typedef CachedFontCharTemplate = {
 	var uvY:Float;
 	var uvWidth:Float;
 	var uvHeight:Float;
+}
+
+private class SdfScratch {
+	public var capacity:Int = 0;
+	public var spanCapacity:Int = 0;
+	public var inside:Vector<Float>;
+	public var outside:Vector<Float>;
+	public var tmp:Vector<Float>;
+	public var distInside:Vector<Float>;
+	public var distOutside:Vector<Float>;
+	public var f:Vector<Float>;
+	public var d:Vector<Float>;
+	public var v:Vector<Int>;
+	public var z:Vector<Float>;
+
+	public function new() {}
+
+	public function ensure(count:Int, span:Int) {
+		if (capacity < count) {
+			capacity = count;
+			inside = new Vector<Float>(capacity);
+			outside = new Vector<Float>(capacity);
+			tmp = new Vector<Float>(capacity);
+			distInside = new Vector<Float>(capacity);
+			distOutside = new Vector<Float>(capacity);
+		}
+		if (spanCapacity < span) {
+			spanCapacity = span;
+			f = new Vector<Float>(spanCapacity);
+			d = new Vector<Float>(spanCapacity);
+			v = new Vector<Int>(spanCapacity);
+			z = new Vector<Float>(spanCapacity + 1);
+		}
+	}
 }
 
 class Font extends Asset<kha.Font> {
@@ -173,20 +206,22 @@ class Font extends Asset<kha.Font> {
 			pixels.writeU8(i, 0); // background of 0 around pixels
 		i = 0;
 		var ch:Stbtt_bakedchar;
+		final scratch = new SdfScratch();
 		for (index in chars) {
 			var g:Int = StbTruetype.stbtt_FindGlyphIndex(f, index);
 			ch = chardata[i];
 			if (ch.x1 > ch.x0 && ch.y1 > ch.y0) {
-				final segmentKey = makeGlyphSegmentKey(fontIndex, bakedFontSize, g);
-				final segments = getGlyphSegments(f, g, scale, ch, glyphSegments, segmentKey);
-				buildGlyphSdf(pixels, pw, ch, segments);
+				final glyphWidth = ch.x1 - ch.x0 - sdfPadding * 2;
+				final glyphHeight = ch.y1 - ch.y0 - sdfPadding * 2;
+				StbTruetype.stbtt_MakeGlyphBitmap(f, pixels, ch.x0 + sdfPadding + (ch.y0 + sdfPadding) * pw, glyphWidth, glyphHeight, pw, scale, scale, g);
+				buildGlyphSdfFromBitmap(pixels, pw, ch, scratch);
 			}
 			++i;
 		}
 		return bottom_y;
 	}
 
-	static function estimateAtlasSize(data:Blob, offset:Int, pixelHeight:Float, chars:Array<Int>):{width:Int, height:Int} {
+	static function estimateAtlasSize(data:Blob, offset:Int, pixelHeight:Float, chars:Array<Int>, padding:Int):{width:Int, height:Int} {
 		var f:Stbtt_fontinfo = new Stbtt_fontinfo();
 		if (!StbTruetype.stbtt_InitFont(f, data, offset))
 			return {width: 64, height: 32};
@@ -202,8 +237,8 @@ class Font extends Asset<kha.Font> {
 			var gw = rect.x1 - rect.x0;
 			var gh = rect.y1 - rect.y0;
 			if (gw > 0 && gh > 0) {
-				var packedWidth = gw + sdfPadding * 2 + 1;
-				var packedHeight = gh + sdfPadding * 2 + 1;
+				var packedWidth = gw + padding * 2 + 1;
+				var packedHeight = gh + padding * 2 + 1;
 				if (packedWidth > maxPackedWidth)
 					maxPackedWidth = packedWidth;
 				if (packedHeight > maxPackedHeight)
@@ -219,7 +254,7 @@ class Font extends Asset<kha.Font> {
 		if (height < maxPackedHeight)
 			height = nextPow2(maxPackedHeight);
 
-		while (!canPackAtlas(data, offset, pixelHeight, chars, width, height)) {
+		while (!canPackAtlas(data, offset, pixelHeight, chars, width, height, padding)) {
 			if (height < width)
 				height *= 2;
 			else
@@ -229,7 +264,7 @@ class Font extends Asset<kha.Font> {
 		return {width: width, height: height};
 	}
 
-	static function canPackAtlas(data:Blob, offset:Int, pixelHeight:Float, chars:Array<Int>, pw:Int, ph:Int):Bool {
+	static function canPackAtlas(data:Blob, offset:Int, pixelHeight:Float, chars:Array<Int>, pw:Int, ph:Int, padding:Int):Bool {
 		var f:Stbtt_fontinfo = new Stbtt_fontinfo();
 		if (!StbTruetype.stbtt_InitFont(f, data, offset))
 			return false;
@@ -244,15 +279,15 @@ class Font extends Asset<kha.Font> {
 			var rect = StbTruetype.stbtt_GetGlyphBitmapBox(f, g, scale, scale);
 			var gw = rect.x1 - rect.x0;
 			var gh = rect.y1 - rect.y0;
-			if (gw > 0 && gh > 0 && x + gw + sdfPadding * 2 + 1 >= pw) {
+			if (gw > 0 && gh > 0 && x + gw + padding * 2 + 1 >= pw) {
 				y = bottom_y;
 				x = 1;
 			}
-			if (gw > 0 && gh > 0 && y + gh + sdfPadding * 2 + 1 >= ph)
+			if (gw > 0 && gh > 0 && y + gh + padding * 2 + 1 >= ph)
 				return false;
 			if (gw > 0 && gh > 0) {
-				x += gw + sdfPadding * 2 + 1;
-				var glyphBottom = y + gh + sdfPadding * 2 + 1;
+				x += gw + padding * 2 + 1;
+				var glyphBottom = y + gh + padding * 2 + 1;
 				if (glyphBottom > bottom_y)
 					bottom_y = glyphBottom;
 			}
@@ -432,6 +467,55 @@ class Font extends Asset<kha.Font> {
 		buildGlyphSdfSlow(pixels, atlasWidth, glyph, segments);
 	}
 
+	static function buildGlyphSdfFromBitmap(pixels:Blob, atlasWidth:Int, glyph:Stbtt_bakedchar, scratch:SdfScratch) {
+		final width = glyph.x1 - glyph.x0;
+		final height = glyph.y1 - glyph.y0;
+		if (width <= 0 || height <= 0)
+			return;
+
+		final count = width * height;
+		scratch.ensure(count, width > height ? width : height);
+		final inside = scratch.inside;
+		final outside = scratch.outside;
+
+		for (y in 0...height) {
+			final row = y * width;
+			final atlasRow = (glyph.y0 + y) * atlasWidth + glyph.x0;
+			for (x in 0...width) {
+				final idx = row + x;
+				final alphaByte = pixels.readU8(atlasRow + x);
+				if (alphaByte == 0) {
+					inside[idx] = sdfInf;
+					outside[idx] = 0.0;
+				} else if (alphaByte == 255) {
+					inside[idx] = 0.0;
+					outside[idx] = sdfInf;
+				} else {
+					final alpha = alphaByte / 255.0;
+					final insideDistance = 1.0 - alpha;
+					inside[idx] = insideDistance * insideDistance;
+					outside[idx] = alpha * alpha;
+				}
+			}
+		}
+
+		final distInside = scratch.distInside;
+		final distOutside = scratch.distOutside;
+		edt2dInto(inside, width, height, scratch.tmp, distInside, scratch.f, scratch.d, scratch.v, scratch.z);
+		edt2dInto(outside, width, height, scratch.tmp, distOutside, scratch.f, scratch.d, scratch.v, scratch.z);
+
+		for (y in 0...height) {
+			final row = y * width;
+			final atlasRow = (glyph.y0 + y) * atlasWidth + glyph.x0;
+			for (x in 0...width) {
+				final idx = row + x;
+				final signed = Math.sqrt(distOutside[idx]) - Math.sqrt(distInside[idx]);
+				final normalized = 0.5 + signed / (2.0 * sdfSpread);
+				pixels.writeU8(atlasRow + x, normalized <= 0.0 ? 0 : normalized >= 1.0 ? 255 : Std.int(normalized * 255.0 + 0.5));
+			}
+		}
+	}
+
 	static function buildGlyphSdfFast(pixels:Blob, atlasWidth:Int, glyph:Stbtt_bakedchar, segments:Array<GlyphSegment>) {
 		final width = glyph.x1 - glyph.x0;
 		final height = glyph.y1 - glyph.y0;
@@ -555,7 +639,12 @@ class Font extends Asset<kha.Font> {
 		final d = new Vector<Float>(Std.int(Math.max(width, height)));
 		final v = new Vector<Int>(Std.int(Math.max(width, height)));
 		final z = new Vector<Float>(Std.int(Math.max(width, height)) + 1);
+		edt2dInto(source, width, height, tmp, out, f, d, v, z);
+		return out;
+	}
 
+	static function edt2dInto(source:Vector<Float>, width:Int, height:Int, tmp:Vector<Float>, out:Vector<Float>, f:Vector<Float>, d:Vector<Float>, v:Vector<Int>,
+			z:Vector<Float>) {
 		for (x in 0...width) {
 			for (y in 0...height)
 				f[y] = source[y * width + x];
@@ -571,8 +660,6 @@ class Font extends Asset<kha.Font> {
 			for (x in 0...width)
 				out[y * width + x] = d[x];
 		}
-
-		return out;
 	}
 
 	static inline function edtIntersection(f:Vector<Float>, q:Int, v:Int):Float
@@ -645,7 +732,7 @@ class Font extends Asset<kha.Font> {
 
 		final offset = resolveFontOffset();
 
-		var atlasSize = estimateAtlasSize(blob, offset, bakedFontSize, oldGlyphs);
+		var atlasSize = estimateAtlasSize(blob, offset, bakedFontSize, oldGlyphs, sdfPadding);
 		var width:Int = atlasSize.width;
 		var height:Int = atlasSize.height;
 		var baked = new Vector<Stbtt_bakedchar>(oldGlyphs.length);

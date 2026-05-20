@@ -3,6 +3,7 @@ package s.ui.layouts;
 import s.ui.Element;
 
 @:access(s.ui.AttachedLayout)
+@:access(s.ui.Element)
 class Layout extends Element {
 	final cells:Array<AttachedLayout> = [];
 	@:attr(rect) var rectX:Float = 0.0;
@@ -86,7 +87,13 @@ class Layout extends Element {
 	}
 
 	function updateCell(cell:AttachedLayout) {
-		if (cell.dirty)
+		if (cell.dirty
+			|| cell.object.widthDirty
+			|| cell.object.heightDirty
+			|| cell.object.left.marginDirty
+			|| cell.object.right.marginDirty
+			|| cell.object.top.marginDirty
+			|| cell.object.bottom.marginDirty)
 			cell.update();
 		updateChild(cell.object);
 	}

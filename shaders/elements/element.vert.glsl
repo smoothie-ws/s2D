@@ -3,10 +3,10 @@
 uniform mat3 mvp;
 uniform vec4 rect;
 
-layout(location = 0) in vec2 vertPos;
-layout(location = 1) in vec2 vertUV;
-layout(location = 0) out vec2 fragPos;
-layout(location = 1) out vec2 fragUV;
+in vec2 vertPos;
+in vec2 vertUV;
+out vec2 fragPos;
+out vec2 fragUV;
 
 void main() {
     fragPos = rect.xy + vertPos * rect.zw;

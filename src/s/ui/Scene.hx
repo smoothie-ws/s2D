@@ -67,7 +67,7 @@ class Scene extends Layer {
 		for (el in pressed.copy())
 			if (!interactive.contains(el))
 				while (el.pressedButtons.length > 0)
-					el.release(el.pressedButtons.pop(), window.mouse.x, window.mouse.y);
+					el.release(el.pressedButtons[el.pressedButtons.length - 1], window.mouse.x, window.mouse.y);
 	}
 
 	override function updateOrder()

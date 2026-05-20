@@ -7,11 +7,20 @@ import s.math.Vec4;
 
 @:nullSafety
 class Animation implements s.shortcut.Shortcut {
-	@:overload(function(from:Vec2, to:Vec2, duration:Float, advance:Vec2->Void):Animation {})
-	@:overload(function(from:Vec3, to:Vec3, duration:Float, advance:Vec3->Void):Animation {})
-	@:overload(function(from:Vec4, to:Vec4, duration:Float, advance:Vec4->Void):Animation {})
 	public static function mix(from:Float, to:Float, duration:Float = 0.5, advance:Float->Void):Animation
-		return new Animation(from == to ? 0.0 : duration, t -> advance(from * (1.0 - t) + to * t));
+		return new Animation(from == to ? 0.0 : duration, t -> advance(s.math.SMath.mix(from, to, t)));
+
+	public static function mixVec2(from:Vec2, to:Vec2, duration:Float = 0.5, advance:Vec2->Void):Animation
+		return new Animation(from == to ? 0.0 : duration, t -> advance(s.math.SMath.mix(from, to, t)));
+
+	public static function mixVec3(from:Vec3, to:Vec3, duration:Float = 0.5, advance:Vec3->Void):Animation
+		return new Animation(from == to ? 0.0 : duration, t -> advance(s.math.SMath.mix(from, to, t)));
+
+	public static function mixVec4(from:Vec4, to:Vec4, duration:Float = 0.5, advance:Vec4->Void):Animation
+		return new Animation(from == to ? 0.0 : duration, t -> advance(s.math.SMath.mix(from, to, t)));
+
+	public static function mixColor(from:Color, to:Color, duration:Float = 0.5, advance:Color->Void):Animation
+		return new Animation(from == to ? 0.0 : duration, t -> advance(Color.mix(from, to, t)));
 
 	var d:Float = 0.0;
 	var l:Int = 0;
@@ -107,7 +116,7 @@ class Animation implements s.shortcut.Shortcut {
 		return this;
 	}
 
-	public function loop(loops:Int) {
+	public function loop(loops:Int = 0) {
 		this.loops = loops;
 		return this;
 	}
@@ -116,9 +125,10 @@ class Animation implements s.shortcut.Shortcut {
 		d += Time.delta * speed / duration;
 		if (d < 1.0)
 			advance(easing(d));
-		else if (loops == 0 || ++l < loops)
+		else if (loops == 0 || ++l < loops) {
 			d = 0.0;
-		else
+			completed();
+		} else
 			complete();
 	}
 

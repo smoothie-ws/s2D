@@ -19,8 +19,8 @@ class Label extends Drawable {
 
 	@:attr.attached public final font:FontStyle = new FontStyle();
 
-	@:attr(textContent) public var text:String;
-	@:attr(textContent) public var elideMode:ElideMode = ElideNone;
+	@:attr(content) public var text:String;
+	@:attr(content) public var elideMode:ElideMode = ElideNone;
 	@:attr public var alignment:Alignment = AlignLeft | AlignTop;
 
 	@:readonly @:alias public var displayX:Float = textX;
@@ -53,7 +53,7 @@ class Label extends Drawable {
 
 		final hDirty = left.offsetDirty || right.offsetDirty;
 		final vDirty = top.offsetDirty || bottom.offsetDirty;
-		final lineCharsDirty = textContentDirty || font.spacingDirty || font.metricsDirty;
+		final lineCharsDirty = contentDirty || font.spacingDirty || font.metricsDirty;
 		final charsAreDirty = lineCharsDirty || elideMode != ElideNone && hDirty;
 
 		if (lineCharsDirty)

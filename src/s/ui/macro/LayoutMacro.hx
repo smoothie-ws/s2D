@@ -36,6 +36,7 @@ class LayoutMacro {
 		function updateCell(cell:Expr, uniform:Bool)
 			return macro {
 				var cell = $cell;
+				var margins = cell.object.$s.margin + cell.object.$e.margin;
 				cell.$p = base;
 				${
 					if (uniform)
@@ -43,9 +44,9 @@ class LayoutMacro {
 					else
 						macro {
 							if (!cell.$fillL || !Math.isNaN(cell.$preferredL))
-								cell.$l = cell.object.$l;
+								cell.$l = cell.object.$l + margins;
 							else
-								cell.$l = cell.$minimumL + freeSpace * cell.weight;
+								cell.$l = cell.$minimumL + margins + freeSpace * cell.weight;
 							cell.$l += freeSpacePerCell;
 						}
 				}
@@ -94,16 +95,19 @@ class LayoutMacro {
 				cell.$cl = $rectCLRef;
 				cells.push(cell);
 
-				if (!Math.isNaN(cell.$preferredL))
-					fixedSpace += c.$l = cell.$clampL(cell.$preferredL);
+				var margins = c.$s.margin + c.$e.margin;
+				if (!Math.isNaN(cell.$preferredL)) {
+					c.$l = cell.$clampL(cell.$preferredL);
+					fixedSpace += c.$l + margins;
+				}
 				else if (!cell.$fillL)
-					fixedSpace += c.$l;
+					fixedSpace += c.$l + margins;
 				else {
 					if ($rectLRef > 0.0)
 						cell.weight = Math.min(cell.$maximumL, $rectLRef) / $rectLRef * cell.$stretchFactor;
 					else
 						cell.weight = 0.0;
-					fixedSpace += cell.$minimumL;
+					fixedSpace += cell.$minimumL + margins;
 					totalWeight += cell.weight;
 				}
 			}
