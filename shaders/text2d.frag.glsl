@@ -15,8 +15,7 @@ out vec4 fragColor;
 const float alphaFringeClip = 0.03;
 
 float sampleDistance(vec2 uv) {
-    vec4 texel = texture(source, uv);
-    return max(max(texel.r, texel.g), texel.b);
+    return texture(source, uv).r;
 }
 
 float screenPxRange() {
@@ -26,9 +25,9 @@ float screenPxRange() {
 }
 
 float hardenAlpha(float alpha) {
-    alpha = clamp(alpha, 0.0, 1.0);
-    alpha = alpha * alpha * (3.0 - 2.0 * alpha);
-    return clamp((alpha - alphaFringeClip) / (1.0 - alphaFringeClip), 0.0, 1.0);
+    float value = clamp(alpha, 0.0, 1.0);
+    value = value * value * (3.0 - 2.0 * value);
+    return clamp((value - alphaFringeClip) / (1.0 - alphaFringeClip), 0.0, 1.0);
 }
 
 void main() {

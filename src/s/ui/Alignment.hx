@@ -9,7 +9,30 @@ extern enum abstract Alignment(Int) from Int to Int {
 	var AlignTop:Int = 1 << 3;
 	var AlignBottom:Int = 1 << 4;
 	var AlignVCenter:Int = 1 << 5;
-	var AlignCenter:Int = AlignHCenter | AlignVCenter;
+
+	var AlignLeftTop = AlignLeft | AlignTop;
+	var AlignLeftCenter = AlignLeft | AlignVCenter;
+	var AlignLeftBottom = AlignLeft | AlignBottom;
+
+	var AlignRightTop = AlignRight | AlignTop;
+	var AlignRightCenter = AlignRight | AlignVCenter;
+	var AlignRightBottom = AlignRight | AlignBottom;
+
+	var AlignTopLeft = AlignLeftTop;
+	var AlignTopCenter = AlignTop | AlignHCenter;
+	var AlignTopRight = AlignRightTop;
+
+	var AlignBottomLeft = AlignLeftBottom;
+	var AlignBottomCenter = AlignBottom | AlignHCenter;
+	var AlignBottomRight = AlignRightBottom;
+
+	var AlignCenter = AlignHCenter | AlignVCenter;
+	
+	var AlignCenterLeft = AlignLeftCenter;
+	var AlignCenterRight = AlignRightCenter;
+
+	var AlignCenterTop = AlignTopCenter;
+	var AlignCenterBottom = AlignBottomCenter;
 
 	public inline function matches(value:Alignment)
 		return this & value != 0;
@@ -23,7 +46,7 @@ extern enum abstract Alignment(Int) from Int to Int {
 			strs.push("AlignHCenter");
 		else if (this & AlignRight != 0)
 			strs.push("AlignRight");
-		
+
 		if (this & AlignTop != 0)
 			strs.push("AlignTop");
 		else if (this & AlignVCenter != 0)

@@ -129,6 +129,8 @@ class Element extends Object2D<Element> implements Markup {
 	@:attr(transform) public var inheritTransform:Bool = true;
 	@:attr(transform) public var propagateTransform:Bool = true;
 
+	@:signal public function updated();
+
 	public function new(?tags:ElementTags) {
 		super();
 
@@ -318,6 +320,7 @@ class Element extends Object2D<Element> implements Markup {
 	function markup() {}
 
 	function updateTree() {
+		updated();
 		update();
 		updateChildren();
 		flush();

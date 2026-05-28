@@ -53,8 +53,8 @@ class Label extends Drawable {
 
 		final hDirty = left.offsetDirty || right.offsetDirty;
 		final vDirty = top.offsetDirty || bottom.offsetDirty;
-		final lineCharsDirty = contentDirty || font.spacingDirty || font.metricsDirty;
-		final charsAreDirty = lineCharsDirty || elideMode != ElideNone && hDirty;
+		final lineCharsDirty = contentDirty || textDirty || elideModeDirty || font.spacingDirty || font.metricsDirty;
+		final charsAreDirty = lineCharsDirty || elideMode != ElideNone && (hDirty || elideModeDirty);
 
 		if (lineCharsDirty)
 			rebuildLineChars();
@@ -65,7 +65,6 @@ class Label extends Drawable {
 			textX = alignLineX(textWidth);
 			textY = alignLineY(font.size);
 		}
-
 		if (charsAreDirty || textHorizontalDirty)
 			alignCharsX(textX);
 		if (charsAreDirty || textVerticalDirty)
